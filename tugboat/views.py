@@ -22,6 +22,21 @@ class IndexView(Resource):
         return current_app.send_static_file('index.html')
 
 
+class ClassicSearchRedirectView(Resource):
+    """
+    End point converts classic search to bumbblebee, returns an http redirect
+    """
+    def get(self):
+        """
+
+        """
+        # Setup the data
+        current_app.logger.info('Classic search redirect received data, headers: {}'.format(request.headers))
+        data = get_post_data(request)
+        redirect_url = 'https://ui.adsabs.harvard.edu'
+        return redirect(redirect_url, code=302)        
+
+    
 class BumblebeeView(Resource):
     """
     End point that is used to forward a search result page from ADS Classic
