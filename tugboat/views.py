@@ -7,7 +7,8 @@ from utils import get_post_data
 from client import client
 from flask import redirect, current_app, request, abort
 from flask.ext.restful import Resource
-
+from webargs import fields
+from webargs.flaskparser import parser
 
 class IndexView(Resource):
     """
@@ -36,6 +37,35 @@ class ClassicSearchRedirectView(Resource):
         bbb_url=current_app.config['BUMBLEBEE_URL']
         return redirect(bbb_url, code=302)        
 
+    @staticmethod
+    def convert_search(request):
+        """
+        Convert classic search parameters to bumblebee
+        """
+        api = {
+            'author': fields.Str(required=False)
+            }
+        args = parser.parse(api, request)
+        search_terms = []
+        filter_terms = []
+        for key in args:
+            if key == 'author':
+                search_terms.append('author:' + args['author'])
+
+        if len(search_terms) == 0:
+            search = '*:*'
+        elif len(search_terms) == 1:
+            search = search_terms[0]
+        else:
+            search = ''
+            connector = '+OR+'
+            for current in search_terms:
+                search = current + connector
+            search = search[:-len(connector)]  # remove final
+
+        solr_query = 'q=' + search
+        return solr_query
+    
     
 class BumblebeeView(Resource):
     """
