@@ -33,8 +33,8 @@ class ClassicSearchRedirectView(Resource):
         # Setup the data
         current_app.logger.info('Classic search redirect received data, headers: {}'.format(request.headers))
         data = get_post_data(request)
-        redirect_url = 'https://ui.adsabs.harvard.edu'
-        return redirect(redirect_url, code=302)        
+        bbb_url=current_app.config['BUMBLEBEE_URL']
+        return redirect(bbb_url, code=302)        
 
     
 class BumblebeeView(Resource):
