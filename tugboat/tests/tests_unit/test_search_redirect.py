@@ -29,8 +29,7 @@ class TestSearchParameters(TestCase):
         req.args = {'author': 'huchra%2C+john'}
         req.mimetype = None
         author_search = ClassicSearchRedirectView.convert_search(req)
-        print '\n\n' + author_search + '\n\n'
-        self.assertEqual(author_search, 'q=author%3A%22huchra%2C%20john', 'author test')
+        self.assertEqual(author_search, 'q=author:"huchra, john"', 'author test')
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

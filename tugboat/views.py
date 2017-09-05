@@ -9,6 +9,7 @@ from flask import redirect, current_app, request, abort
 from flask.ext.restful import Resource
 from webargs import fields
 from webargs.flaskparser import parser
+import urllib
 
 class IndexView(Resource):
     """
@@ -50,7 +51,9 @@ class ClassicSearchRedirectView(Resource):
         filter_terms = []
         for key in args:
             if key == 'author':
-                search_terms.append('author:' + args['author'])
+                value = urllib.unquote(args['author'])
+                value = value.replace('+', ' ')
+                search_terms.append('author:"' + value + '"')
 
         if len(search_terms) == 0:
             search = '*:*'
