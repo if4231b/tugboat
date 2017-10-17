@@ -101,7 +101,8 @@ class TestSearchParameters(TestCase):
         self.assertEqual('q=' + urllib.quote('abs:') + '(' + urllib.quote('M31') + ')', object_search) # single object
         
 
-    def test_classic_parameters_date(self):
+    def test_classic_parameters_pubdate(self):
+        """test pubdate"""
         req = Request('get', 'http://test.test?') 
         prepped = req.prepare()
         req.args = {}
@@ -134,6 +135,38 @@ class TestSearchParameters(TestCase):
         search = ClassicSearchRedirectView.convert_search(req)
         self.assertEqual('q=' + urllib.quote('pubdate:[0000-01 TO 1991-10]'), search) # no start
 
+    def test_classic_parameters_database(self):
+        """database can be astronomy or physics 
 
+        not clear how to test with more than one database set"""
+        req = Request('get', 'http://test.test?')
+        prepped = req.prepare()
+        req.mimetype = None
+        req.args = {'db_key': 'AST'}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_database}&fq_database=(database:"astronomy")'),
+                         search) # astro only
+
+
+        req.args = {'db_key': 'PHY'}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_database}&fq_database=(database:"physics")'),
+                         search) # physics only
+
+
+        req.args = {'db_key': 'GEN'}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_database}&fq_database=(database:"general")'),
+                         search) # general only
+
+    def test_classic_article_sel(self):
+        req = Request('get', 'http://test.test?')
+        prepped = req.prepare()
+        req.mimetype = None
+        req.args = {'article_sel': 'YES'}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=*:*' + urllib.quote(' property:article'), search)  # article_sel
+        
+        
 if __name__ == '__main__':
     unittest.main(verbosity=2)

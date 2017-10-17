@@ -49,9 +49,11 @@ class ClassicSearchRedirectView(Resource):
 
         # schema for params
         api = {
+            'article_sel': fields.Str(required=False),
             'aut_xct': fields.Str(required=False),
             'aut_logic': fields.Str(required=False),
             'author': fields.Str(required=False),
+            'db_key': fields.Str(required=False),
             'end_mon': fields.Integer(required=False),
             'end_year': fields.Integer(required=False),
             'obj_logic': fields.Str(required=False),
@@ -66,21 +68,31 @@ class ClassicSearchRedirectView(Resource):
         args = parser.parse(api, request)
 
         connector = ' '
-        search_terms = []
-        filter_terms = []
         search = ClassicSearchRedirectView.convert_authors(args)
         search += ClassicSearchRedirectView.convert_typical(args, 'object', 'object')
         search += ClassicSearchRedirectView.convert_typical(args, 'title', 'title')
         search += ClassicSearchRedirectView.convert_typical(args, 'text', 'abs')
         search += ClassicSearchRedirectView.convert_pubdate(args)
+
+        filters = ClassicSearchRedirectView.convert_database(args)
+        # add more filters here
+
+        clauses = ClassicSearchRedirectView.convert_article_sel(args)
+        # add more clauses here
+
         for key in args:
             # handle remaining query terms
             pass
 
         if len(search) == 0:
             search = '*:*'
-
         solr_query = 'q=' + search
+
+        if len(clauses) > 0:
+            solr_query += clauses
+
+        if len(filters) > 0:
+            solr_query += '&' + filters
         return solr_query
 
     @staticmethod 
@@ -196,10 +208,38 @@ class ClassicSearchRedirectView(Resource):
                                                                                     end_year, end_month))
         return search
         
-        
-            
-        
-    
+
+    @staticmethod
+    def convert_database(args):
+        """return string with database element
+
+        only support for ast and phy, bbb does not support arxiv value, classic does not support general
+        no support to select multiple dbs
+        """
+
+        db = args.get('db_key')
+        filter = ''
+        classic_db_to_bbb = {'AST': 'astronomy', 'GEN': 'general', 'PHY': 'physics'}
+        if db:
+            bbb_db = classic_db_to_bbb.get(db, None)
+            if bbb_db:
+                filter = '{!type=aqp v=$fq_database}&fq_database=(' + 'database:"{}")'.format(bbb_db)
+                filter = 'fq=' + urllib.quote(filter)
+            else:
+                print 'invalid database from classic {}'.format(db)
+        return filter
+
+    @staticmethod
+    def convert_article_sel(args):
+        """return string with the article_sel element
+
+        """
+
+        article_sel = args.get('article_sel')
+        clause = ''
+        if article_sel and (str(article_sel).upper() == 'YES'):
+            clause = urllib.quote(' property:article')
+        return clause
 
     @staticmethod
     def classic_field_to_array(value):
