@@ -50,14 +50,18 @@ class ClassicSearchRedirectView(Resource):
         # schema for params
         api = {
             'article_sel': fields.Str(required=False),
-            'aut_xct': fields.Str(required=False),
             'aut_logic': fields.Str(required=False),
+            'aut_note': fields.Str(required=False),
+            'aut_xct': fields.Str(required=False),
             'author': fields.Str(required=False),
+            'data_link': fields.Str(required=False),
             'db_key': fields.Str(required=False),
             'end_mon': fields.Integer(required=False),
             'end_year': fields.Integer(required=False),
             'obj_logic': fields.Str(required=False),
             'object': fields.Str(required=False),
+            'open_link': fields.Str(required=False),
+            'preprint_link': fields.Str(required=False),
             'start_mon': fields.Integer(required=False),
             'start_year': fields.Integer(required=False),
             'text': fields.Str(required=False),
@@ -74,10 +78,12 @@ class ClassicSearchRedirectView(Resource):
         search += ClassicSearchRedirectView.convert_typical(args, 'text', 'abs')
         search += ClassicSearchRedirectView.convert_pubdate(args)
 
+        # filters holds an array of filter querys, 'fq=' added below
         filters = ClassicSearchRedirectView.convert_database(args)
         # add more filters here
+        filters += ClassicSearchRedirectView.convert_property_filters(args)
 
-        clauses = ClassicSearchRedirectView.convert_article_sel(args)
+        clauses = '' 
         # add more clauses here
 
         for key in args:
@@ -92,8 +98,9 @@ class ClassicSearchRedirectView(Resource):
             solr_query += clauses
 
         if len(filters) > 0:
-            solr_query += '&' + filters
+            solr_query += '&fq=' + '&fq='.join(filters)
         return solr_query
+
 
     @staticmethod 
     def author_exact(args):
@@ -103,6 +110,7 @@ class ClassicSearchRedirectView(Resource):
             if 'YES' == str(value).upper():
                 return True
         return False
+
 
     @staticmethod
     def get_logic(classic_param, args):
@@ -145,7 +153,6 @@ class ClassicSearchRedirectView(Resource):
             search = search[:-len(urllib.quote(connector))]  # remove final
             search += ')'
         return search
-
 
 
     @staticmethod
@@ -218,28 +225,33 @@ class ClassicSearchRedirectView(Resource):
         """
 
         db = args.get('db_key')
-        filter = ''
+        filter = []
         classic_db_to_bbb = {'AST': 'astronomy', 'GEN': 'general', 'PHY': 'physics'}
         if db:
             bbb_db = classic_db_to_bbb.get(db, None)
             if bbb_db:
-                filter = '{!type=aqp v=$fq_database}&fq_database=(' + 'database:"{}")'.format(bbb_db)
-                filter = 'fq=' + urllib.quote(filter)
+                f = '{!type=aqp v=$fq_database}&fq_database=(' + 'database:"{}")'.format(bbb_db)
+                filter = [urllib.quote(f)]
             else:
                 print 'invalid database from classic {}'.format(db)
         return filter
 
+
     @staticmethod
-    def convert_article_sel(args):
-        """return string with the article_sel element
+    def convert_property_filters(args):
+        """filter query for property 
 
+        several search fields translate to a Bumblebee filter query with property
         """
-
-        article_sel = args.get('article_sel')
-        clause = ''
-        if article_sel and (str(article_sel).upper() == 'YES'):
-            clause = urllib.quote(' property:article')
-        return clause
+        to_bbb_property = {'article_sel': 'article', 'aut_note': 'note', 'data_link': 'data',
+                           'open_link': 'OPENACCESS', 'preprint_link': 'eprint'}
+        clauses = []
+        for key in to_bbb_property.keys():
+            if str(args.get(key)).upper() == 'YES':
+                value = to_bbb_property[key]
+                clauses += [urllib.quote('{{!type=aqp v=$fq_doctype}}&fq_doctype=(doctype:"{}")'.format(to_bbb_property.get(key)))]
+        return clauses
+            
 
     @staticmethod
     def classic_field_to_array(value):

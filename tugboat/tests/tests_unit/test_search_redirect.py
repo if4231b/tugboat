@@ -21,7 +21,8 @@ class TestSearchParameters(TestCase):
     """
 
     def test_classic_parameters_authors(self):
-        # create prepared request to send to convert url code
+        """authors: single, multple, quoted,  and/or"""
+
         req = Request('get', 'http://test.test?') 
         prepped = req.prepare()
         req.args = {}
@@ -63,7 +64,7 @@ class TestSearchParameters(TestCase):
 
 
     def test_classic_parameters_object(self):
-        # create prepared request to send to convert url code
+        """object: single, multple, etc"""
         req = Request('get', 'http://test.test?') 
         prepped = req.prepare()
         req.args = {}
@@ -83,6 +84,7 @@ class TestSearchParameters(TestCase):
                          object_search) # object, semicolor separator
 
     def test_classic_parameters_title(self):
+        """title field"""
         req = Request('get', 'http://test.test?') 
         prepped = req.prepare()
         req.args = {}
@@ -92,6 +94,7 @@ class TestSearchParameters(TestCase):
         self.assertEqual('q=' + urllib.quote('title:') + '(' + urllib.quote('M31') + ')', object_search) # single object
         
     def test_classic_parameters_text(self):
+        """text search"""
         req = Request('get', 'http://test.test?') 
         prepped = req.prepare()
         req.args = {}
@@ -160,12 +163,64 @@ class TestSearchParameters(TestCase):
                          search) # general only
 
     def test_classic_article_sel(self):
+        """article_sel to property:article"""
         req = Request('get', 'http://test.test?')
         prepped = req.prepare()
         req.mimetype = None
         req.args = {'article_sel': 'YES'}
         search = ClassicSearchRedirectView.convert_search(req)
-        self.assertEqual('q=*:*' + urllib.quote(' property:article'), search)  # article_sel
+        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"article")'), search)
+ 
+
+    def test_classic_data_link(self):
+        """data_link to property:data"""
+        req = Request('get', 'http://test.test?')
+        prepped = req.prepare()
+        req.mimetype = None
+        req.args = {'data_link': 'YES'}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"data")'), search)
+
+    def test_classic_preprint_link(self):
+        """preprint_link to property:eprint"""
+        req = Request('get', 'http://test.test?')
+        prepped = req.prepare()
+        req.mimetype = None
+        req.args = {'preprint_link': 'YES'}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"eprint")'), search)
+
+    def test_classic_note_link(self):
+        """aut_note to property:note"""
+        req = Request('get', 'http://test.test?')
+        prepped = req.prepare()
+        req.mimetype = None
+        req.args = {'aut_note': 'YES'}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"note")'), search)
+
+    def test_classic_open_link(self):
+        """open_link to property:OPENACCESS"""
+        req = Request('get', 'http://test.test?')
+        prepped = req.prepare()
+        req.mimetype = None
+        req.args = {'open_link': 'YES'}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"OPENACCESS")'),
+                         search)
+ 
+    def test_multiple_link_properties(self):
+        """multiple Bumblebee property fields set"""
+        req = Request('get', 'http://test.test?')
+        prepped = req.prepare()
+        req.mimetype = None
+        req.args = {'article_sel': 'YES', 'data_link': 'YES' }
+        search = ClassicSearchRedirectView.convert_search(req)
+        # should comparison permit fq clauses to be in different order?
+        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"data")') + 
+                         '&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"article")'),
+                         search)
+
         
         
 if __name__ == '__main__':
