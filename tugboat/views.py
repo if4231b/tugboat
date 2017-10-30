@@ -11,6 +11,7 @@ from webargs import fields
 from webargs.flaskparser import parser
 import urllib
 from datetime import datetime
+import calendar
 
 class IndexView(Resource):
     """
@@ -56,12 +57,18 @@ class ClassicSearchRedirectView(Resource):
             'author': fields.Str(required=False),
             'data_link': fields.Str(required=False),
             'db_key': fields.Str(required=False),
+            'end_entry_day': fields.Integer(required=False),
+            'end_entry_mon': fields.Integer(required=False),
+            'end_entry_year': fields.Integer(required=False),
             'end_mon': fields.Integer(required=False),
             'end_year': fields.Integer(required=False),
             'obj_logic': fields.Str(required=False),
             'object': fields.Str(required=False),
             'open_link': fields.Str(required=False),
             'preprint_link': fields.Str(required=False),
+            'start_entry_day': fields.Integer(required=False),
+            'start_entry_mon': fields.Integer(required=False),
+            'start_entry_year': fields.Integer(required=False),
             'start_mon': fields.Integer(required=False),
             'start_year': fields.Integer(required=False),
             'text': fields.Str(required=False),
@@ -77,6 +84,7 @@ class ClassicSearchRedirectView(Resource):
         search += ClassicSearchRedirectView.convert_typical(args, 'title', 'title')
         search += ClassicSearchRedirectView.convert_typical(args, 'text', 'abs')
         search += ClassicSearchRedirectView.convert_pubdate(args)
+        search += ClassicSearchRedirectView.convert_entry_date(args)
 
         # filters holds an array of filter querys, 'fq=' added below
         filters = ClassicSearchRedirectView.convert_database(args)
@@ -196,13 +204,15 @@ class ClassicSearchRedirectView(Resource):
         start_month = args.get('start_mon')
         end_month = args.get('end_mon')
 
+        # if start is not provided, use beginning of time
         if start_year is None:
             start_year = 0
         if start_month is None:
             start_month = 1
 
-        tmp = datetime.now()
+        # if end is not provided, use now
         if end_year is None:
+            tmp = datetime.now()
             end_year = tmp.year
             if end_month is None:
                 end_month = tmp.month
@@ -214,7 +224,52 @@ class ClassicSearchRedirectView(Resource):
         search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO {:04d}-{:02}]'.format(start_year, start_month,
                                                                                     end_year, end_month))
         return search
+
+    @staticmethod
+    def convert_entry_date(args):
+        """ return string for pubdate element
+
+        like pubdate search, only start on end need be specified
+        bumblebee does not yet implement, assume to follow pubdate 
+        """
+        start_year = args.get('start_entry_year')
+        end_year = args.get('end_entry_year')
+        if start_year is None and end_year is None:
+            return ''
         
+        start_month = args.get('start_entry_mon')
+        start_day = args.get('start_entry_day')
+        end_month = args.get('end_entry_mon')
+        end_day = args.get('end_entry_day')
+
+        # if start is not provided, use beginning of time
+        if start_year is None:
+            start_year = 0
+        if start_month is None:
+            start_month = 1
+        if start_day is None:
+            start_day = 1
+
+        # if end is not provided, use now
+        if end_year is None:
+            tmp = datetime.now()
+            end_year = tmp.year
+            if end_month is None:
+                end_month = tmp.month
+            if end_day is None:
+                end_day = tmp.day
+        else:
+            if end_month is None:
+                end_month = 12
+            if end_day is None:
+                # get last day of end month/year
+                end_day = calendar.monthrange(end_year, end_month)[1]
+
+        search = 'entry_date' + \
+            urllib.quote(':[{:04d}-{:02d}-{:02d} TO {:04d}-{:02}-{:02d}]'.format(start_year, start_month, start_day,
+                                                                                 end_year, end_month, end_day))
+        return search
+            
 
     @staticmethod
     def convert_database(args):

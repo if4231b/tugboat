@@ -221,6 +221,45 @@ class TestSearchParameters(TestCase):
                          '&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"article")'),
                          search)
 
+    def test_classic_parameters_entry_date(self):
+        """test entry date"""
+        req = Request('get', 'http://test.test?') 
+        prepped = req.prepare()
+        req.args = {}
+        req.mimetype = None
+        req.args = {}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=*:*', search)  # no pub date
+
+        req.args = {'start_entry_year': 1990, 'end_entry_year': 1991}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=' + urllib.quote('entry_date:[1990-01-01 TO 1991-12-31]'), search)  # both years only
+
+
+        req.args = {'start_entry_year': 1990, 'start_entry_mon': 5, 'end_entry_year': 1991, 'end_entry_mon': 9}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=' + urllib.quote('entry_date:[1990-05-01 TO 1991-09-30]'), search) # years and months
+ 
+        req.args = {'start_entry_year': 1990, 'end_entry_year': 1991, 'end_entry_mon': 10}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=' + urllib.quote('entry_date:[1990-01-01 TO 1991-10-31]'), search) # no start mon
+       
+        req.args = {'start_entry_year': 1990, 'start_entry_mon': 5, 'end_entry_year': 1991}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=' + urllib.quote('entry_date:[1990-05-01 TO 1991-12-31]'), search) # no end mon
+
+        req.args = {'start_entry_year': 1990, 'start_entry_mon': 5}
+        search = ClassicSearchRedirectView.convert_search(req)
+        n = datetime.now()
+        self.assertEqual('q=' + urllib.quote('entry_date:[1990-05-01 TO {:04d}-{:02d}-{:02d}]'.format(n.year, n.month, n.day)), search) # no end
+        req.args = {'end_entry_year': 1991, 'end_entry_mon': 10}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=' + urllib.quote('entry_date:[0000-01-01 TO 1991-10-31]'), search) # no start
+
+        req.args = {'start_entry_year': 1990, 'start_entry_mon': 5, 'start_entry_day': 6,
+                    'end_entry_year': 1991, 'end_entry_mon': 9, 'end_entry_day': 10}
+        search = ClassicSearchRedirectView.convert_search(req)
+        self.assertEqual('q=' + urllib.quote('entry_date:[1990-05-06 TO 1991-09-10]'), search) # years, months, days
         
         
 if __name__ == '__main__':
