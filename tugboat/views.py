@@ -5,6 +5,7 @@ Views
 
 from utils import get_post_data
 from client import client
+import traceback
 from flask import redirect, current_app, request, abort
 from flask.ext.restful import Resource
 from webargs import fields
@@ -167,10 +168,15 @@ class ClassicSearchRedirectView(Resource):
         """
         return 302 to bumblebee
         """
-        current_app.logger.info('Classic search redirect received data, headers: {}'.format(request.headers))
-        bbb_url=current_app.config['BUMBLEBEE_URL']
-        bbb_query = self.translate(request)
-        return redirect(bbb_url + bbb_query, code=302)
+        try:
+            current_app.logger.info('Classic search redirect received data, headers: {}'.format(request.headers))
+            bbb_url=current_app.config['BUMBLEBEE_URL']
+            bbb_query = self.translate(request)
+            return redirect(bbb_url + bbb_query, code=302)
+        except Exception as e:
+            current_app.logger.error(e.message)
+            current_app.logger.error(traceback.format_exc())
+            return '<html><body>' + e.message + '</body></html>'
 
 
     def translate(self, request):
