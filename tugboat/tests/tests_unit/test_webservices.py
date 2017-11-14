@@ -45,7 +45,8 @@ class TestBumblebeeView(TestCase):
         """
         app_ = create_app()
         app_.config['VAULT_QUERY_URL'] = 'http://fakeapi.query'
-        app_.config['BUMBLEBEE_URL'] = 'http://bumblebee.adsabs.harvard.edu'
+        app_.config['BUMBLEBEE_URL'] = 'http://devui.adsabs.harvard.edu'
+        self.bumblebee_url = app_.config['BUMBLEBEE_URL']
         return app_
 
     def test_get_redirect_with_qid(self):
@@ -62,7 +63,7 @@ class TestBumblebeeView(TestCase):
         self.assertStatus(r, 200)
         self.assertEqual(
             r.json['redirect'],
-            'http://bumblebee.adsabs.harvard.edu/#search/q=*%3A*&__qid=adsf1234'
+            self.bumblebee_url + '/#search/q=*%3A*&__qid=adsf1234'
         )
 
     def test_when_send_empty_or_no_bibcodes(self):

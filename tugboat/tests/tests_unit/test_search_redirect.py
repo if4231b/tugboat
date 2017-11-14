@@ -394,6 +394,20 @@ class TestSearchParametersTranslation(TestCase):
         self.assertTrue('unprocessed_parameter' in search)
         self.assertTrue('aff_logic' in search)
         self.assertTrue('full_logic' in search)
+
+    def test_qsearch(self):
+        """qsearch searches metadata
+
+        not used by long classic form
+        """
+        req = Request('get', 'http://test.test?')
+        prepped = req.prepare()
+        req.args = {'qsearch': 'foo'}
+        req.mimetype = None
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=foo&sort=' + urllib.quote('classic_factor desc, bibcode desc'), search)
+
         
 if __name__ == '__main__':
     unittest.main(verbosity=2)

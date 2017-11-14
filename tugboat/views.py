@@ -32,6 +32,7 @@ class TranslationValue():
     functions that translation specific parameters typically augment the TranslationValue
     """
 
+    # consider adding field for sort order and other args
     def __init__(self):
         self.search = []
         self.filter= []
@@ -70,6 +71,7 @@ class ClassicSearchRedirectView(Resource):
             'object': fields.Str(required=False),
             'open_link': fields.Str(required=False),
             'preprint_link': fields.Str(required=False),
+            'qsearch': fields.Str(required=False),
             'return_req': fields.Str(required=False),
             'start_entry_day': fields.Integer(required=False),
             'start_entry_mon': fields.Integer(required=False),
@@ -86,7 +88,7 @@ class ClassicSearchRedirectView(Resource):
             'nr_to_return': fields.Integer(required=False),
             'start_nr': fields.Integer(required=False),
 
-            # and the following are not yet translated, and may not be of type Str
+            # and the following are not yet translated, and may not actually be of type Str
             'ref_stems': fields.Str(required=False),
             'min_score': fields.Str(required=False),
             'data_link': fields.Str(required=False),
@@ -172,7 +174,9 @@ class ClassicSearchRedirectView(Resource):
             current_app.logger.info('Classic search redirect received data, headers: {}'.format(request.headers))
             bbb_url=current_app.config['BUMBLEBEE_URL']
             bbb_query = self.translate(request)
-            return redirect(bbb_url + bbb_query, code=302)
+            redirect_url = bbb_url + '/#search/'+ bbb_query
+            current_app.logger.info('translated classic {} to bumblebee {}, {}'.format(request, bbb_query, redirect_url))
+            return redirect(redirect_url, code=302)
         except Exception as e:
             current_app.logger.error(e.message)
             current_app.logger.error(traceback.format_exc())
@@ -188,7 +192,7 @@ class ClassicSearchRedirectView(Resource):
         # consider using reflection to obtain this list
         funcs = [self.translate_authors, self.translate_pubdate,
                  self.translate_entry_date, self.translate_results_subset,
-                 self.translate_return_req,
+                 self.translate_return_req, self.translate_qsearch,
                  self.translate_database, self.translate_property_filters,
                  self.translate_jou_pick
                  ]
@@ -442,6 +446,15 @@ class ClassicSearchRedirectView(Resource):
                 value = to_bbb_property[key]
                 self.translation.filter.append(urllib.quote('{{!type=aqp v=$fq_doctype}}&fq_doctype=(doctype:"{}")'.format(to_bbb_property.get(key))))
 
+    def translate_qsearch(self, args):
+        """translate qsearch parameter from single input form on classic_w_BBB_button.html
+
+        return nonfielded metadata search query
+        """
+        qsearch = args.pop('qsearch', None)
+        if qsearch:
+            self.translation.search.append(qsearch + '&sort=' + urllib.quote('classic_factor desc, bibcode desc'))
+
     @staticmethod
     def classic_field_to_array(value):
         """ convert authors or objects from classic to list"""
@@ -505,10 +518,10 @@ class BumblebeeView(Resource):
 
         # POST the query
         # https://api.adsabs.harvard.edu/v1/vault/query
-        current_app.logger.info('Contacting vault/query')
+        current_app.logger.info('Contacting vault/query ' + str(current_app.config['TESTING']))
         r = client().post(
-            current_app.config['VAULT_QUERY_URL'],
-            data=bigquery_data
+        current_app.config['VAULT_QUERY_URL'],
+        data=bigquery_data
         )
 
         if r.status_code != 200:
