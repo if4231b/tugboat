@@ -26,6 +26,18 @@ class IndexView(Resource):
         """
         return current_app.send_static_file('index.html')
 
+
+class SimpleClassicView(Resource):
+    """for testing, show ads page with single input text field"""
+    def get(self):
+        return current_app.send_static_file('classic_w_BBB_button.html')
+
+class ComplexClassicView(Resource):
+    """for testing, show standard ads search page"""
+    def get(self):
+        return current_app.send_static_file('fielded_classic_w_BBB_button.html')
+
+
 class TranslationValue():
     """simple singleton container class to hold translation components
 

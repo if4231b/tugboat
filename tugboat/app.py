@@ -4,7 +4,7 @@ Application factory
 """
 
 import logging.config
-from views import BumblebeeView, IndexView, ClassicSearchRedirectView
+from views import BumblebeeView, IndexView, ClassicSearchRedirectView, SimpleClassicView, ComplexClassicView
 from flask import Flask
 from flask.ext.restful import Api
 
@@ -29,6 +29,9 @@ def create_app():
     api.add_resource(IndexView, '/index')
     api.add_resource(ClassicSearchRedirectView, '/classicSearchRedirect')
     api.add_resource(BumblebeeView, '/redirect')
+    api.add_resource(SimpleClassicView, '/ads')
+    api.add_resource(ComplexClassicView, '/adsabs')
+
 
     return app
 
