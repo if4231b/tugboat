@@ -63,7 +63,10 @@ class ClassicSearchRedirectView(Resource):
         super(ClassicSearchRedirectView, self).__init__()
         self.translation = TranslationValue()
 
+
         # all the parameters from classic
+        # typically integer fields must be represented by Field to allow None values
+        # some of these need use type fields.List
         self.api = {
             # the following we currently translate
             'article_sel': fields.Str(required=False),
@@ -73,11 +76,11 @@ class ClassicSearchRedirectView(Resource):
             'author': fields.Str(required=False),
             'data_link': fields.Str(required=False),
             'db_key': fields.Str(required=False),
-            'end_entry_day': fields.Integer(required=False),
-            'end_entry_mon': fields.Integer(required=False),
-            'end_entry_year': fields.Integer(required=False),
-            'end_mon': fields.Integer(required=False),
-            'end_year': fields.Integer(required=False),
+            'end_entry_day': fields.Field(required=False),
+            'end_entry_mon': fields.Field(required=False),
+            'end_entry_year': fields.Field(required=False),
+            'end_mon': fields.Field(required=False),
+            'end_year': fields.Field(required=False),
             'jou_pick': fields.Str(required=False),
             'obj_logic': fields.Str(required=False),
             'object': fields.Str(required=False),
@@ -85,11 +88,11 @@ class ClassicSearchRedirectView(Resource):
             'preprint_link': fields.Str(required=False),
             'qsearch': fields.Str(required=False),
             'return_req': fields.Str(required=False),
-            'start_entry_day': fields.Integer(required=False),
-            'start_entry_mon': fields.Integer(required=False),
-            'start_entry_year': fields.Integer(required=False),
-            'start_mon': fields.Integer(required=False),
-            'start_year': fields.Integer(required=False),
+            'start_entry_day': fields.Field(required=False),
+            'start_entry_mon': fields.Field(required=False),
+            'start_entry_year': fields.Field(required=False),
+            'start_mon': fields.Field(required=False),
+            'start_year': fields.Field(required=False),
             'text': fields.Str(required=False),
             'txt_logic': fields.Str(required=False),
             'title': fields.Str(required=False),
@@ -97,10 +100,10 @@ class ClassicSearchRedirectView(Resource):
 
             # implementations for the following just create errors
             # perhaps because there is no ads/bumbleebee support yet
-            'nr_to_return': fields.Integer(required=False),
-            'start_nr': fields.Integer(required=False),
+            'nr_to_return': fields.Field(required=False),
+            'start_nr': fields.Field(required=False),
 
-            # and the following are not yet translated, and may not actually be of type Str
+            # and the following are not yet translated
             'ref_stems': fields.Str(required=False),
             'min_score': fields.Str(required=False),
             'data_link': fields.Str(required=False),
@@ -135,13 +138,13 @@ class ClassicSearchRedirectView(Resource):
             'group_and': fields.Str(required=False),
             'data_type': fields.Str(required=False),
 
-            'aut_wt': fields.Str(required=False),
-            'obj_wt': fields.Str(required=False),
-            'kwd_wt': fields.Str(required=False),
-            'ttl_wt': fields.Str(required=False),
-            'txt_wt': fields.Str(required=False),
-            'full_wt': fields.Str(required=False),
-            'aff_wt': fields.Str(required=False),
+            'aut_wt': fields.Field(required=False),
+            'obj_wt': fields.Field(required=False),
+            'kwd_wt': fields.Field(required=False),
+            'ttl_wt': fields.Field(required=False),
+            'txt_wt': fields.Field(required=False),
+            'full_wt': fields.Field(required=False),
+            'aff_wt': fields.Field(required=False),
             'aut_syn': fields.Str(required=False),
             'ttl_syn': fields.Str(required=False),
             'txt_syn': fields.Str(required=False),
@@ -192,7 +195,7 @@ class ClassicSearchRedirectView(Resource):
         except Exception as e:
             current_app.logger.error(e.message)
             current_app.logger.error(traceback.format_exc())
-            return '<html><body>' + e.message + '</body></html>'
+            return '<html><body><h2>Error translating classic query</h2> ' + e.message + '<p>' + traceback.format_exc() + '<p>' + str(request) + '</body></html>'
 
 
     def translate(self, request):
@@ -257,6 +260,13 @@ class ClassicSearchRedirectView(Resource):
             return value
         return ''
 
+    @staticmethod
+    def supplied(value):
+        """check html parameter to see if it is valid"""
+        if value is None or (isinstance(value, basestring) and len(value) == 0):
+            return False
+        return True
+
     def translate_authors(self, args):
         """return string with all author search elements
 
@@ -313,30 +323,35 @@ class ClassicSearchRedirectView(Resource):
         in classic, 2 digit years were permitted
         bumblebee example: pubdate:[1990-01 TO 1990-02]
         """
+
         start_year = args.pop('start_year', None)
         end_year = args.pop('end_year', None)
-        if start_year is None and end_year is None:
+        if self.supplied(start_year) is False and self.supplied(end_year) is False:
             return
         
         start_month = args.pop('start_mon', None)
         end_month = args.pop('end_mon', None)
 
         # if start is not provided, use beginning of time
-        if start_year is None:
+        if not self.supplied(start_year):
             start_year = 0
-        if start_month is None:
+        if not self.supplied(start_month):
             start_month = 1
 
         # if end is not provided, use now
-        if end_year is None:
+        if not self.supplied(end_year):
             tmp = datetime.now()
             end_year = tmp.year
-            if end_month is None:
+            if not self.supplied(end_month):
                 end_month = tmp.month
         else:
-            if end_month is None:
+            if not self.supplied(end_month):
                 end_month = 12
 
+        start_year = int(start_year)
+        start_month = int(start_month)
+        end_year = int(end_year)
+        end_month = int(end_month)
         # Y10k problem, but for 2 digit years we want to be clear what years we are searching
         search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO {:04d}-{:02}]'.format(start_year, start_month,
                                                                                     end_year, end_month))
@@ -350,37 +365,43 @@ class ClassicSearchRedirectView(Resource):
         """
         start_year = args.pop('start_entry_year', None)
         end_year = args.pop('end_entry_year', None)
-        if start_year is None and end_year is None:
+        if self.supplied(start_year) is False and self.supplied(end_year) is False:
             return  # nothing to do
-        
+
         start_month = args.pop('start_entry_mon', None)
         start_day = args.pop('start_entry_day', None)
         end_month = args.pop('end_entry_mon', None)
         end_day = args.pop('end_entry_day', None)
 
         # if start is not provided, use beginning of time
-        if start_year is None:
+        if not self.supplied(start_year):
             start_year = 0
-        if start_month is None:
+        if not self.supplied(start_month):
             start_month = 1
-        if start_day is None:
+        if not self.supplied(start_day):
             start_day = 1
 
         # if end is not provided, use now
-        if end_year is None:
+        if not self.supplied(end_year):
             tmp = datetime.now()
             end_year = tmp.year
-            if end_month is None:
+            if not self.supplied(end_month):
                 end_month = tmp.month
-            if end_day is None:
+            if not self.supplied(end_day):
                 end_day = tmp.day
         else:
-            if end_month is None:
+            if not self.supplied(end_month):
                 end_month = 12
-            if end_day is None:
+            if not self.supplied(end_day):
                 # get last day of end month/year
                 end_day = calendar.monthrange(end_year, end_month)[1]
 
+        start_year = int(start_year)
+        start_month = int(start_month)
+        start_day = int(start_day)
+        end_year = int(end_year)
+        end_month = int(end_month)
+        end_day = int(end_day)
         search = 'entry_date' + \
             urllib.quote(':[{:04d}-{:02d}-{:02d} TO {:04d}-{:02}-{:02d}]'.format(start_year, start_month, start_day,
                                                                                  end_year, end_month, end_day))
