@@ -133,7 +133,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args = {'start_year': 1990, 'start_mon': 5, 'end_year': 1991, 'end_mon': 10}
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO 1991-10]'), search) # years and months
+        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO 1991-10]'), search)  # years and months
  
         req.args = {'start_year': 1990, 'end_year': 1991, 'end_mon': 10}
         view = ClassicSearchRedirectView()
@@ -165,21 +165,21 @@ class TestSearchParametersTranslation(TestCase):
         req.args = {'db_key': 'AST'}
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_database}&fq_database=(database:"astronomy")'),
-                         search) # astro only
-
+        # the search query should be 'q=*:*&fq={!type=aqp v=$fq_database}&fq_database=(database:"astronomy")'
+        # but with only some of the special characters html encoded
+        self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)',
+                         search)  # astronomy only
 
         req.args = {'db_key': 'PHY'}
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_database}&fq_database=(database:"physics")'),
+        self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22physics%22)',
                          search) # physics only
-
 
         req.args = {'db_key': 'GEN'}
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_database}&fq_database=(database:"general")'),
+        self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22general%22)',
                          search) # general only
 
     def test_article_sel(self):

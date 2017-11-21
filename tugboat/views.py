@@ -419,8 +419,9 @@ class ClassicSearchRedirectView(Resource):
         if db:
             bbb_db = classic_db_to_bbb.pop(db, None)
             if bbb_db:
-                f = '{!type=aqp v=$fq_database}&fq_database=(' + 'database:"{}")'.format(bbb_db)
-                self.translation.filter.append(urllib.quote(f))
+                f = urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_database}') + \
+                    '&fq_database=(' + urllib.quote('database:"{}"'.format(bbb_db)) + ')'
+                self.translation.filter.append(f)
             else:
                 self.translation.warning_message.append('invalid database from classic {}'.format(db))
                 print 'invalid database from classic {}'.format(db)
