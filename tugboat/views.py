@@ -3,10 +3,9 @@
 Views
 """
 
-from utils import get_post_data
 from client import client
 import traceback
-from flask import redirect, current_app, request, abort
+from flask import redirect, current_app, request, abort, render_template, make_response
 from flask.ext.restful import Resource
 from webargs import fields
 from webargs.flaskparser import parser
@@ -50,7 +49,7 @@ class TranslationValue():
         self.filter= []
         self.error_message = []
         self.warning_message = []
-
+        self.sort = ''
 
 class ClassicSearchRedirectView(Resource):
     """
@@ -71,7 +70,6 @@ class ClassicSearchRedirectView(Resource):
             # the following we currently translate
             'article_sel': fields.Str(required=False),
             'aut_logic': fields.Str(required=False),
-            'aut_note': fields.Str(required=False),
             'aut_xct': fields.Str(required=False),
             'author': fields.Str(required=False),
             'data_link': fields.Str(required=False),
@@ -103,40 +101,43 @@ class ClassicSearchRedirectView(Resource):
             'nr_to_return': fields.Field(required=False),
             'start_nr': fields.Field(required=False),
 
-            # and the following are not yet translated
-            'ref_stems': fields.Str(required=False),
-            'min_score': fields.Str(required=False),
-            'data_link': fields.Str(required=False),
-            'preprint_link': fields.Str(required=False),
-            'abstract': fields.Str(required=False),
-            'aut_note': fields.Str(required=False),
+            # golnaz - 3/5/2018
             'article_link': fields.Str(required=False),
             'gif_link': fields.Str(required=False),
             'article': fields.Str(required=False),
             'simb_obj': fields.Str(required=False),
             'ned_obj': fields.Str(required=False),
-            'gpndb_obj': fields.Str(required=False),
-            'lib_link': fields.Str(required=False),
-            'mail_link': fields.Str(required=False),
+            'data_and': fields.Str(required=False),
             'toc_link': fields.Str(required=False),
             'pds_link': fields.Str(required=False),
             'multimedia_link': fields.Str(required=False),
             'ref_link': fields.Str(required=False),
             'citation_link': fields.Str(required=False),
-            'open_link': fields.Str(required=False),
             'associated_link': fields.Str(required=False),
             'ar_link': fields.Str(required=False),
-            'lpi_query': fields.Str(required=False),
+            'aut_note': fields.Str(required=False),
+            'spires_link': fields.Str(required=False),
+            'group_and': fields.Str(required=False),
+            'group_sel': fields.Str(required=False),
+            'abstract': fields.Str(required=False),
+            'sort': fields.Str(required=False),
+
+            # these can be ignored, at least for now
             'sim_query': fields.Str(required=False),
             'ned_query': fields.Str(required=False),
+            'mail_link': fields.Str(required=False),
+            'gpndb_obj': fields.Str(required=False),
+            'min_score': fields.Str(required=False),
+            'lpi_query': fields.Str(required=False),
             'iau_query': fields.Str(required=False),
-            'adsobj_query': fields.Str(required=False),
-            'sort': fields.Str(required=False),
-            'group_sel': fields.Str(required=False),
-            'arxiv_sel': fields.Str(required=False),
-            'data_and': fields.Str(required=False),
-            'group_and': fields.Str(required=False),
             'data_type': fields.Str(required=False),
+
+            # and the following are not yet translated
+            'ref_stems': fields.Str(required=False),
+            'lib_link': fields.Str(required=False),
+            'open_link': fields.Str(required=False),
+            'adsobj_query': fields.Str(required=False),
+            'arxiv_sel': fields.Str(required=False),
 
             'aut_wt': fields.Field(required=False),
             'obj_wt': fields.Field(required=False),
@@ -191,25 +192,46 @@ class ClassicSearchRedirectView(Resource):
             bbb_query = self.translate(request)
             redirect_url = bbb_url + '/#search/'+ bbb_query
             current_app.logger.info('translated classic {} to bumblebee {}, {}'.format(request, bbb_query, redirect_url))
+            # golnaz 3/11/2018
+            # while testing and using curl to see the build url after redirect call, noticed that url gets html encoded,
+            # and in particular & become &amp; that BBB does not like, hence switched to render_template to tell it that
+            # the url is safe and not encode it
+            # but then while testing classic template, realized no encoding was done and so switched back, since
+            # it felt redirect was faster and unnoticeable compared to render_template
             return redirect(redirect_url, code=302)
+            #return render_template('redirect.html', url=redirect_url), 200
         except Exception as e:
             current_app.logger.error(e.message)
             current_app.logger.error(traceback.format_exc())
             return '<html><body><h2>Error translating classic query</h2> ' + e.message + '<p>' + traceback.format_exc() + '<p>' + str(request) + '</body></html>'
 
 
+    def parse(self, request):
+        """
+        Parse the input parameter
+        """
+        args = parser.parse(self.api, request)
+        # group_sel is a special case since we could have repeated entries, (i.e., &group_sel=ARI&group_sel=ESO%2FLib&group_sel=HST)
+        # hence need to extract them to a list, and then turn it to a string, since calling parser.parse only parses the first element
+        group_sel = request.args.getlist('group_sel', type=str)
+        if len(group_sel) > 0:
+            args['group_sel'] = ','.join(group_sel)
+        return args
+
     def translate(self, request):
         """
         Convert all classic search related parameters to ads/bumblebee
         """
-        args = parser.parse(self.api, request)
+        args = self.parse(request)
         # functions to translate/process specific parameters
         # consider using reflection to obtain this list
         funcs = [self.translate_authors, self.translate_pubdate,
                  self.translate_entry_date, self.translate_results_subset,
                  self.translate_return_req, self.translate_qsearch,
                  self.translate_database, self.translate_property_filters,
-                 self.translate_jou_pick
+                 self.translate_jou_pick, self.translate_data_entries,
+                 self.translate_group_entries, self.translate_sort,
+                 self.translate_to_ignore,
                  ]
         for f in funcs:
             f(args)  # each may contribute to self.translation singleton
@@ -222,23 +244,25 @@ class ClassicSearchRedirectView(Resource):
         # combine translation fragments in self.translation to ads/bumblebee parameter string
         if len(self.translation.search) == 0:
             self.translation.search = ['*:*']
-        solr_query = 'q=' + ' ' .join(self.translation.search)
+        solr_query = 'q=' + ' '.join(self.translation.search)
         if len(self.translation.filter) > 0:
             solr_query += '&fq=' + '&fq='.join(self.translation.filter)
+        if len(self.translation.sort) > 0:
+            solr_query += '&sort=' + self.translation.sort
         if len(self.translation.error_message) > 0:
-            solr_query += '&error_message=' + '&error_message'.join(self.translation.error_message)
+            solr_query += '&error_message=' + '&error_message='.join(self.translation.error_message)
         if len(self.translation.warning_message):
-            solr_query += '&warning_message=' + '&warning_message'.join(self.translation.warning_message)
+            solr_query += '&warning_message=' + '&warning_message='.join(self.translation.warning_message)
         if len(args.keys()):
             # the functions that translate individual parameters use pop to remove parameters from arg list
             # here if there are unprocessed parameters
-            # pass their names ot ads/bumblebee
+            # pass their names out ads/bumblebee
             solr_query += '&unprocessed_parameter=' + urllib.quote('Parameters not processed: ' + ' '.join(args.keys()))
 
         return solr_query
 
 
-    @staticmethod 
+    @staticmethod
     def author_exact(args):
         """given an aut_xct value, is it true"""
         value = args.pop('aut_xct', None)
@@ -326,11 +350,11 @@ class ClassicSearchRedirectView(Resource):
 
         start_year = args.pop('start_year', None)
         end_year = args.pop('end_year', None)
-        if self.supplied(start_year) is False and self.supplied(end_year) is False:
-            return
-        
         start_month = args.pop('start_mon', None)
         end_month = args.pop('end_mon', None)
+
+        if self.supplied(start_year) is False and self.supplied(end_year) is False:
+            return
 
         # if start is not provided, use beginning of time
         if not self.supplied(start_year):
@@ -365,13 +389,13 @@ class ClassicSearchRedirectView(Resource):
         """
         start_year = args.pop('start_entry_year', None)
         end_year = args.pop('end_entry_year', None)
-        if self.supplied(start_year) is False and self.supplied(end_year) is False:
-            return  # nothing to do
-
         start_month = args.pop('start_entry_mon', None)
         start_day = args.pop('start_entry_day', None)
         end_month = args.pop('end_entry_mon', None)
         end_day = args.pop('end_entry_day', None)
+
+        if self.supplied(start_year) is False and self.supplied(end_year) is False:
+            return  # nothing to do
 
         # if start is not provided, use beginning of time
         if not self.supplied(start_year):
@@ -424,7 +448,6 @@ class ClassicSearchRedirectView(Resource):
                 self.translation.filter.append(f)
             else:
                 self.translation.warning_message.append('invalid database from classic {}'.format(db))
-                print 'invalid database from classic {}'.format(db)
 
     def translate_results_subset(self, args):
         """subset/pagination currently not supported by bumblebee
@@ -432,8 +455,9 @@ class ClassicSearchRedirectView(Resource):
         provide error message if pagination request is present"""
         number_to_return = args.pop('nr_to_return', None)
         start_nr = args.pop('start_nr', None)
-        if number_to_return or start_nr:
-            self.translation.error_message.append(urllib.quote('Result subset/pagination is not supported'))
+        # golnaz: hold off for now
+        # if number_to_return or start_nr:
+        #     self.translation.error_message.append(urllib.quote('Result subset/pagination is not supported'))
 
     def translate_jou_pick(self, args):
         """translate for refereed, non-refereed"""
@@ -452,6 +476,120 @@ class ClassicSearchRedirectView(Resource):
             self.translation.filter.append(urllib.quote('{!type=aqp v=$fq_property}&fq_property=(property:"notrefereed")'))
         else:
             self.translation.error_message.append(urllib.quote('Invalid value for jou_pick: {}'.format(jou_pick)))
+
+    def translate_data_entries(self, args):
+        """ Convert all classic data entries search related parameters to ads/bumblebee """
+        dict_entries = {'article_link'    : 'esources:("PUB_PDF" OR "PUB_HTML" OR "AUTHOR_PDF" OR "AUTHOR_HTML" OR "ADS_PDF" OR "ADS_SCAN")',
+                        'gif_link'        : 'esources:("ADS_SCAN")',
+                        'article'         : 'esources:("PUB_PDF" OR "PUB_HTML")',
+                        'preprint_link'   : 'esources:("EPRINT_HTML")',
+                        'toc_link'        : 'property:("TOC")',
+                        'ref_link'        : 'reference:(*)',
+                        'citation_link'   : 'citation_count:[1 TO *]',
+                        'associated_link' : 'property:("ASSOCIATED")',
+                        'simb_obj'        : 'data:("simbad")',
+                        'ned_obj'         : 'data:("ned")',
+                        'pds_link'        : 'property:("PDS")',
+                        'aut_note'        : 'property:("NOTE")',   # need to verify this later, it is being implemented 3/12
+                        'ar_link'         : 'read_count:[1 TO *]',
+                        'multimedia_link' : 'property:("PRESENTATION")',
+                        'spires_link'     : 'property:("INSPIRE")',
+                        'abstract'        : '*:*',
+        }
+
+        operator = self.translate_data_and(args)
+        if operator is not None:
+            # each may contribute to self.translation singleton
+            for classic,BBB in dict_entries.iteritems():
+                value = args.pop(classic, None)
+                if value is None:
+                    # if not provided, we do not need to include it in the result
+                    pass
+                elif value == 'YES':
+                    # include entry, first add the operator
+                    if (operator == 'NOT') or len(self.translation.search) > 0:
+                        self.translation.search.append(operator)
+                    self.translation.search.append(urllib.quote(BBB))
+                else:
+                    # unrecognizable value
+                    self.translation.error_message.append(urllib.quote('Invalid value for {}: {}'.format(classic, value)))
+
+    def translate_data_and(self, args):
+        """ get bibliographic entries operator """
+        data_and = args.pop('data_and', None)
+        if data_and is None:
+            operator = None
+        elif data_and == 'ALL':
+            # when 'A bibliographic entry' radio button is selected
+            operator = ''
+        elif data_and == 'NO':
+            # when 'At least one of the following (OR)' radio button is selected
+            operator = 'OR'
+        elif data_and == 'YES':
+            # when 'All of the following (AND)' radio button is selected
+            operator = 'AND'
+        elif data_and == 'NOT':
+            # when 'None of the following (NOT)' radio button is selected
+            operator = 'NOT'
+        else:
+            operator = None
+            self.translation.error_message.append(urllib.quote('Invalid value for data_and: {}'.format(data_and)))
+        return operator
+
+    def validate_group_entries(self, group_sel):
+        valid_group_sel = ['ARI', 'CfA', 'CFHT', 'Chandra', 'ESO/Lib', 'ESO/Telescopes', 'Gemini', 'Herschel', 'HST',
+                           'ISO', 'IUE', 'JCMT', 'Keck', 'Leiden', 'LPI', 'Magellan', 'NOAO', 'NRAO', 'NRAO/Telescopes',
+                           'ROSAT', 'SDO', 'SMA', 'Spitzer', 'Subaru', 'Swift', 'UKIRT', 'USNO', 'VSGC', 'XMM']
+        if len(group_sel) == 0:
+            return False
+        entry = group_sel.split(',')
+        for e in entry:
+            if e not in valid_group_sel:
+                return False
+        return True
+
+    def translate_group_entries(self, args):
+        """ Convert all classic group entries search related parameters to ads/bumblebee """
+        operator = self.translate_group_and(args)
+        if operator is not None:
+            value = args.pop('group_sel', None)
+            if operator == '*':
+                # if operator is ALL, whether any group_sel is provided, include everything
+                self.translation.search.append(urllib.quote('bibgroup:(*)'))
+            elif self.validate_group_entries(value):
+                # if all entries are valid include them, adding in the selected operator
+                group_sel = ''
+                entry = value.split(',')
+                for e in entry:
+                    if (operator == 'NOT') or len(group_sel) > 0:
+                        group_sel += ' ' + operator + ' '
+                    group_sel += '"' + e + '"'
+                if len(group_sel) > 0:
+                    self.translation.search.append(urllib.quote('bibgroup:(*)'))
+                    self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibgroup_facet}') + \
+                        '&fq_bibgroup_facet=(' + urllib.quote_plus('bibgroup_facet:({})'.format(group_sel)) + ')')
+            else:
+                # unrecognizable value
+                self.translation.error_message.append(urllib.quote('Invalid value for group_sel: {}'.format(value)))
+
+    def translate_group_and(self, args):
+        """ set group entries operator """
+        group_and = args.pop('group_and', None)
+        if group_and is None:
+            operator = None
+        elif group_and == 'ALL':
+            # when 'All Groups' radio button is selected
+            operator = '*'
+        elif group_and == 'NO':
+            # when 'At least one of the following groups (OR)' radio button is selected
+            operator = 'OR'
+        elif group_and == 'YES':
+            # when 'All of the following groups (AND)' radio button is selected
+            operator = 'AND'
+        else:
+            operator = None
+            self.translation.error_message.append(urllib.quote('Invalid value for group_and: {}'.format(group_and)))
+        return operator
 
     def translate_return_req(self, args):
         """if return_req parameter is provided, it must be 'result' or None
@@ -472,7 +610,7 @@ class ClassicSearchRedirectView(Resource):
 
         several search fields translate to a Bumblebee filter query with property
         """
-        to_bbb_property = {'article_sel': 'article', 'aut_note': 'note', 'data_link': 'data',
+        to_bbb_property = {'article_sel': 'article', 'data_link': 'data',
                            'open_link': 'OPENACCESS', 'preprint_link': 'eprint'}
         clauses = []
         for key in to_bbb_property.keys():
@@ -487,7 +625,45 @@ class ClassicSearchRedirectView(Resource):
         """
         qsearch = args.pop('qsearch', None)
         if qsearch:
-            self.translation.search.append(qsearch + '&sort=' + urllib.quote('classic_factor desc, bibcode desc'))
+            self.translation.search.append(qsearch)
+
+    def translate_sort(self, args):
+        """ translate sort parameter """
+        dict_sort = {'SCORE'      : 'date desc, bibcode desc',
+                     'AUTHOR'     : 'first_author desc',
+                     'NDATE'      : 'date desc',
+                     'ODATE'      : 'date asc',
+                     'BIBCODE'    : 'bibcode desc',
+                     'RBIBCODE'   : 'bibcode asc',
+                     'ENTRY'      : 'entry_date desc',
+                     'CITATIONS'  : 'citation_count desc',
+                     'AUTHOR_CNT' : 'author_count desc',
+                     'SBIBCODE'   : 'bibcode desc',
+                     'READS'      : 'read_count desc',
+                     'AR_SCORE'   : 'read_count desc',
+                     'NONE'       : '',
+        }
+
+        value = args.pop('sort', None)
+        if value is None:
+            self.translation.sort = urllib.quote('date desc, bibcode desc')
+            return
+
+        for classic,BBB in dict_sort.iteritems():
+            if value == classic:
+                self.translation.sort = urllib.quote(BBB)
+                return
+
+        # unrecognizable value
+        self.translation.error_message.append(urllib.quote('Invalid value for sort: {}'.format(value)))
+
+    def translate_to_ignore(self, args):
+        """ remove the fields that is being ignored """
+        classic_ignored_fields = ['sim_query', 'ned_query', 'lpi_query', 'iau_query', 'min_score', 'mail_link', 'gpndb_obj',
+                                  'data_type', # From Alberto 3/12 regarding data_type: we'll want it available for API queries, so it's for later
+                                 ]
+        for field in classic_ignored_fields:
+            args.pop(field, None)
 
     @staticmethod
     def classic_field_to_array(value):
@@ -510,6 +686,22 @@ class BumblebeeView(Resource):
     End point that is used to forward a search result page from ADS Classic
     to ADS Bumblebee
     """
+
+    def get_post_data(self, request):
+        """
+        Attempt to coerce POST json data from the request, falling
+        back to the raw data if json could not be coerced.
+        :param request: flask.request
+
+        :return: dict
+        """
+        try:
+            post_data = request.get_json(force=True)
+        except:
+            post_data = request.values
+
+        return post_data
+
     def post(self):
         """
         HTTP GET request
@@ -531,7 +723,7 @@ class BumblebeeView(Resource):
 
         # Setup the data
         current_app.logger.info('Received data, headers: {}'.format(request.headers))
-        data = get_post_data(request)
+        data = self.get_post_data(request)
 
         if not isinstance(data, list):
             current_app.logger.error(
