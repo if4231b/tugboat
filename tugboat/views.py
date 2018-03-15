@@ -5,8 +5,8 @@ Views
 
 from client import client
 import traceback
-from flask import redirect, current_app, request, abort, render_template, make_response
-from flask.ext.restful import Resource
+from flask import redirect, current_app, request, abort, render_template
+from flask_restful import Resource
 from webargs import fields
 from webargs.flaskparser import parser
 import urllib
