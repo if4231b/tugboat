@@ -114,6 +114,7 @@ class ClassicSearchRedirectView(Resource):
             'ref_link': fields.Str(required=False),
             'citation_link': fields.Str(required=False),
             'associated_link': fields.Str(required=False),
+            'lib_link': fields.Str(required=False),
             'ar_link': fields.Str(required=False),
             'aut_note': fields.Str(required=False),
             'spires_link': fields.Str(required=False),
@@ -121,6 +122,26 @@ class ClassicSearchRedirectView(Resource):
             'group_sel': fields.Str(required=False),
             'abstract': fields.Str(required=False),
             'sort': fields.Str(required=False),
+            'aut_wt': fields.Field(required=False),
+            'obj_wt': fields.Field(required=False),
+            'ttl_wt': fields.Field(required=False),
+            'txt_wt': fields.Field(required=False),
+            'aut_wgt': fields.Str(required=False),
+            'obj_wgt': fields.Str(required=False),
+            'ttl_wgt': fields.Str(required=False),
+            'txt_wgt': fields.Str(required=False),
+            'aut_syn': fields.Str(required=False),
+            'ttl_syn': fields.Str(required=False),
+            'txt_syn': fields.Str(required=False),
+            'aut_sco': fields.Str(required=False),
+            'ttl_sco': fields.Str(required=False),
+            'txt_sco': fields.Str(required=False),
+            'aut_req': fields.Str(required=False),
+            'obj_req': fields.Str(required=False),
+            'ttl_req': fields.Str(required=False),
+            'txt_req': fields.Str(required=False),
+            'ref_stems': fields.Str(required=False),
+            'arxiv_sel': fields.Str(required=False),
 
             # these can be ignored, at least for now
             'sim_query': fields.Str(required=False),
@@ -131,44 +152,21 @@ class ClassicSearchRedirectView(Resource):
             'lpi_query': fields.Str(required=False),
             'iau_query': fields.Str(required=False),
             'data_type': fields.Str(required=False),
+            'adsobj_query': fields.Str(required=False),
 
             # and the following are not yet translated
-            'ref_stems': fields.Str(required=False),
-            'lib_link': fields.Str(required=False),
-            'open_link': fields.Str(required=False),
-            'adsobj_query': fields.Str(required=False),
-            'arxiv_sel': fields.Str(required=False),
-
-            'aut_wt': fields.Field(required=False),
-            'obj_wt': fields.Field(required=False),
             'kwd_wt': fields.Field(required=False),
-            'ttl_wt': fields.Field(required=False),
-            'txt_wt': fields.Field(required=False),
             'full_wt': fields.Field(required=False),
             'aff_wt': fields.Field(required=False),
-            'aut_syn': fields.Str(required=False),
-            'ttl_syn': fields.Str(required=False),
-            'txt_syn': fields.Str(required=False),
             'full_syn': fields.Str(required=False),
             'aff_syn': fields.Str(required=False),
-            'aut_wgt': fields.Str(required=False),
-            'obj_wgt': fields.Str(required=False),
             'kwd_wgt': fields.Str(required=False),
-            'ttl_wgt': fields.Str(required=False),
-            'txt_wgt': fields.Str(required=False),
             'full_wgt': fields.Str(required=False),
             'aff_wgt': fields.Str(required=False),
-            'aut_sco': fields.Str(required=False),
             'kwd_sco': fields.Str(required=False),
-            'ttl_sco': fields.Str(required=False),
-            'txt_sco': fields.Str(required=False),
             'full_sco': fields.Str(required=False),
             'aff_sco': fields.Str(required=False),
-            'aut_req': fields.Str(required=False),
-            'obj_req': fields.Str(required=False),
             'kwd_req': fields.Str(required=False),
-            'ttl_req': fields.Str(required=False),
-            'txt_req': fields.Str(required=False),
             'full_req': fields.Str(required=False),
             'aff_req': fields.Str(required=False),
             'aut_logic': fields.Str(required=False),
@@ -216,6 +214,10 @@ class ClassicSearchRedirectView(Resource):
         group_sel = request.args.getlist('group_sel', type=str)
         if len(group_sel) > 0:
             args['group_sel'] = ','.join(group_sel)
+        # similarly arxiv_sel
+        arxiv_sel = request.args.getlist('arxiv_sel', type=str)
+        if len(arxiv_sel) > 0:
+            args['arxiv_sel'] = ','.join(arxiv_sel)
         return args
 
     def translate(self, request):
@@ -230,8 +232,9 @@ class ClassicSearchRedirectView(Resource):
                  self.translate_return_req, self.translate_qsearch,
                  self.translate_database, self.translate_property_filters,
                  self.translate_jou_pick, self.translate_data_entries,
-                 self.translate_group_entries, self.translate_sort,
-                 self.translate_to_ignore,
+                 self.translate_group_sel, self.translate_sort,
+                 self.translate_to_ignore, self.translate_weights,
+                 self.translate_arxiv_sel, self.translate_ref_stems,
                  ]
         for f in funcs:
             f(args)  # each may contribute to self.translation singleton
@@ -491,10 +494,11 @@ class ClassicSearchRedirectView(Resource):
                         'ned_obj'         : 'data:("ned")',
                         'pds_link'        : 'property:("PDS")',
                         'aut_note'        : 'property:("NOTE")',   # need to verify this later, it is being implemented 3/12
+                        'lib_link'        : 'property:("LIBRARYCATALOG")',
                         'ar_link'         : 'read_count:[1 TO *]',
                         'multimedia_link' : 'property:("PRESENTATION")',
                         'spires_link'     : 'property:("INSPIRE")',
-                        'abstract'        : '*:*',
+                        'abstract'        : 'abstract:(*)',
         }
 
         operator = self.translate_data_and(args)
@@ -536,7 +540,7 @@ class ClassicSearchRedirectView(Resource):
             self.translation.error_message.append(urllib.quote('Invalid value for data_and: {}'.format(data_and)))
         return operator
 
-    def validate_group_entries(self, group_sel):
+    def validate_group_sel(self, group_sel):
         valid_group_sel = ['ARI', 'CfA', 'CFHT', 'Chandra', 'ESO/Lib', 'ESO/Telescopes', 'Gemini', 'Herschel', 'HST',
                            'ISO', 'IUE', 'JCMT', 'Keck', 'Leiden', 'LPI', 'Magellan', 'NOAO', 'NRAO', 'NRAO/Telescopes',
                            'ROSAT', 'SDO', 'SMA', 'Spitzer', 'Subaru', 'Swift', 'UKIRT', 'USNO', 'VSGC', 'XMM']
@@ -548,15 +552,17 @@ class ClassicSearchRedirectView(Resource):
                 return False
         return True
 
-    def translate_group_entries(self, args):
+    def translate_group_sel(self, args):
         """ Convert all classic group entries search related parameters to ads/bumblebee """
         operator = self.translate_group_and(args)
         if operator is not None:
             value = args.pop('group_sel', None)
+            if value is None:
+                return
             if operator == '*':
                 # if operator is ALL, whether any group_sel is provided, include everything
                 self.translation.search.append(urllib.quote('bibgroup:(*)'))
-            elif self.validate_group_entries(value):
+            elif self.validate_group_sel(value):
                 # if all entries are valid include them, adding in the selected operator
                 group_sel = ''
                 entry = value.split(',')
@@ -565,7 +571,6 @@ class ClassicSearchRedirectView(Resource):
                         group_sel += ' ' + operator + ' '
                     group_sel += '"' + e + '"'
                 if len(group_sel) > 0:
-                    self.translation.search.append(urllib.quote('bibgroup:(*)'))
                     self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibgroup_facet}') + \
                         '&fq_bibgroup_facet=(' + urllib.quote_plus('bibgroup_facet:({})'.format(group_sel)) + ')')
             else:
@@ -661,9 +666,116 @@ class ClassicSearchRedirectView(Resource):
         """ remove the fields that is being ignored """
         classic_ignored_fields = ['sim_query', 'ned_query', 'lpi_query', 'iau_query', 'min_score', 'mail_link', 'gpndb_obj',
                                   'data_type', # From Alberto 3/12 regarding data_type: we'll want it available for API queries, so it's for later
+                                  'adsobj_query',
                                  ]
         for field in classic_ignored_fields:
             args.pop(field, None)
+
+    def translate_weights(self, args):
+        """ check the weight parameters """
+        # these weights are checked/present as default, if they are not present add them in,
+        # for ***_wt if the values have been changed, keep them in the args to be
+        # reported in the unprocessed parameters to BBB otherwise
+        # if they have stayed unchanged from default then remove them from args
+        dict_weights_default_present = {'aut_syn'  :  'YES',
+                                        'ttl_syn'  :  'YES',
+                                        'txt_syn'  :  'YES',
+                                        'aut_wt'   :  '1.0',
+                                        'obj_wt'   :  '1.0',
+                                        'ttl_wt'   :  '0.3',
+                                        'txt_wt'   :  '3.0',
+                                        'aut_wgt'  :  'YES',
+                                        'obj_wgt'  :  'YES',
+                                        'ttl_wgt'  :  'YES',
+                                        'txt_wgt'  :  'YES',
+                                        'ttl_sco'  :  'YES',
+                                        'txt_sco'  :  'YES',
+        }
+        # for completeness the default absented weights are listed here,
+        # basically, nothing needs to get done for absented weights, if they
+        # have been selected (not default) leave them in the args
+        # if they have stayed unchanged from default, they do not appear in args
+        dict_weights_default_absent = {'aut_sco'  :  'YES',
+                                       'aut_req'  :  'YES',
+                                       'obj_req'  :  'YES',
+                                       'ttl_req'  :  'YES',
+                                       'txt_req'  :  'YES',
+        }
+        for key,value in dict_weights_default_present.iteritems():
+            if key in args:
+                if args[key] == value:
+                    args.pop(key, None)
+            else:
+                args[key] = ''
+
+    def validate_arxiv_sel(self, arxiv_sel):
+        """Validate arXiv selections"""
+        valid_arxiv_sel = ['astro-ph', 'cond-mat', 'cs', 'gr-qc', 'hep-ex', 'hep-lat', 'hep-ph', 'hep-th',
+                           'math', 'math-ph', 'nlin', 'nucl-ex', 'nucl-th', 'physics', 'quant-ph', 'q-bio']
+        if len(arxiv_sel) == 0:
+            return False
+        entry = arxiv_sel.split(',')
+        for e in entry:
+            if e not in valid_arxiv_sel:
+                return False
+        return True
+
+    def translate_arxiv_sel(self, args):
+        """Convert all classic arXiv entries search related parameters to ads/bumblebee"""
+        dict_arxiv = {'astro-ph'  :  'Astrophysics',
+                      'cond-mat'  :  'Condensed Matter',
+                      'cs'        :  'Computer Science',
+                      'gr-qc'     :  'General Relativity and Quantum Cosmology',
+                      'hep-ex'    :  'High Energy Physics - Experiment',
+                      'hep-lat'   :  'High Energy Physics - Lattice',
+                      'hep-ph'    :  'High Energy Physics - Phenomenology',
+                      'hep-th'    :  'High Energy Physics - Theory',
+                      'math'      :  'Mathematics',
+                      'math-ph'   :  'Mathematical Physics',
+                      'nlin'      :  'Nonlinear Sciences',
+                      'nucl-ex'   :  'Nuclear Experiment',
+                      'nucl-th'   :  'Nuclear Theory',
+                      'physics'   :  'Physics',
+                      'quant-ph'  :  'Quantum Physics',
+                      'q-bio'     :  'Quantitative Biology',
+        }
+        value = args.pop('arxiv_sel', None)
+        if value is None:
+            return
+        if self.validate_arxiv_sel(value):
+            # if all entries are valid include them, adding in the selected operator
+            arxiv_sel = ''
+            entry = value.split(',')
+            for e in entry:
+                if len(arxiv_sel) > 0:
+                    arxiv_sel += ' OR '
+                arxiv_sel += 'keyword_facet:"' + dict_arxiv[e].lower() + '"'
+            if len(arxiv_sel) > 0:
+                self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_keyword_facet}') + \
+                                               '&fq_keyword_facet=(' + urllib.quote(arxiv_sel) + ')')
+        else:
+            # unrecognizable value
+            self.translation.error_message.append(urllib.quote('Invalid value for arxiv_sel: {}'.format(value)))
+
+    def translate_ref_stems(self, args):
+        """
+        BBB: bibstem:(ApJ.. OR AJ..); classic: ref_stems="ApJ..,AJ..."
+        list of comma-separated ADS bibstems to return, e.g. ref_stems="ApJ..,AJ..."
+        """
+        value = args.pop('ref_stems', None)
+        if value is None:
+            return
+        # not validating, just pass it to BBB, if any bibstem has been specified
+        ref_stems = ''
+        if len(value) > 0:
+            entry = value.split(',')
+            for e in entry:
+                if len(ref_stems) > 0:
+                    ref_stems += ' OR '
+                ref_stems += '"' + e + '"'
+            if len(ref_stems) > 0:
+                self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibstem_facet}') + \
+                                               '&fq_bibstem_facet=(' + urllib.quote('bibstem_facet:({})'.format(ref_stems)) + ')')
 
     @staticmethod
     def classic_field_to_array(value):

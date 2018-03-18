@@ -31,9 +31,18 @@ In another terminal do
 
 ## To see identified articles redirect to BBB go to :
 
+Either from browser go to
+
     http://localhost:8000/index.html
 
+or curl
 
+    curl -X POST 'http://localhost:8000/redirect --data '["bib1", "bib2", "bib3", ...., "bibN"]'
+
+which returns
+
+    {'redirect': 'https://ui.adsabs.harvard.edu/#search/q=*%3A*&__qid=945gfd9gfda9d'}, 200
+    
 ## To see classic query converted and get redirected to BBB go to URL:
 
     http://localhost:8000/fielded_classic_w_BBB_button.html
