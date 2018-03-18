@@ -1,6 +1,6 @@
 FROM phusion/baseimage
 
-RUN apt-get update
+RUN apt-get update && apt-get install -y apt-transport-https
 RUN apt-get install -y git python-pip python-dev nginx
 RUN pip install --upgrade pip gunicorn requests
 

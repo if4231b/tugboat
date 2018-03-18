@@ -14,11 +14,20 @@ import unittest
 from flask.ext.testing import LiveServerTestCase
 from tugboat.app import create_app
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from httmock import urlmatch, HTTMock
 
+
+@urlmatch(netloc=r'*')
+def store_200(url, request):
+    return {
+        'status_code': 200,
+        'content': {'qid': 'adsf1234', 'query': 'q', 'numfound': 1}
+    }
 
 class TestBumblebeeView(LiveServerTestCase):
     """
@@ -31,13 +40,15 @@ class TestBumblebeeView(LiveServerTestCase):
         """
         app_ = create_app()
         app_.config['VAULT_QUERY_URL'] = 'http://fakeapi.query'
-        app_.config['BUMBLEBEE_URL'] = 'http://bumblebee.adsabs.harvard.edu'
+        app_.config['BUMBLEBEE_URL'] = 'http://devui.adsabs.harvard.edu'
         app_.config['TESTING'] = True
         app_.config['LIVESERVER_PORT'] = 8943
         return app_
 
     def setUp(self):
-        self.driver = webdriver.Firefox()
+        options = Options()
+        options.add_argument('-headless')
+        self.driver = webdriver.Firefox(firefox_options=options)
 
     def tearDown(self):
         self.driver.close()
@@ -77,14 +88,25 @@ class TestBumblebeeView(LiveServerTestCase):
 
         form = self.driver.find_element_by_name('submit')
         form.submit()
+        with HTTMock(store_200):
+            form = self.driver.find_element_by_name('submit')
+            form.submit()
 
+            try:
+                WebDriverWait(self.driver, 10).until(EC.title_contains('ADS'))
+            except TimeoutException:
+                self.fail('Redirect did not succeed')
+
+    def test_redirect_search(self):
+        """
+        end to end test of search redirect
+        """
+        url = self.url_for('classicSearchRedirect?object=object')
+        self.driver.get(url)
         try:
-            WebDriverWait(self.driver, 10).until(
-                EC.title_contains('ADS')
-            )
+            WebDriverWait(self.driver, 10).until(EC.title_contains('ADS'))
         except TimeoutException:
             self.fail('Redirect did not succeed')
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

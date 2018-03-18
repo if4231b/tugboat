@@ -1,4 +1,5 @@
 Flask-Testing==0.4.2
 httmock==1.2.5
 coveralls==0.5
-selenium==2.52.0
+selenium==3.5.0
+

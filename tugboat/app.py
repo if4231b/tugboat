@@ -4,9 +4,8 @@ Application factory
 """
 
 import logging.config
-from views import BumblebeeView, IndexView
+from views import BumblebeeView, IndexView, ClassicSearchRedirectView, SimpleClassicView, ComplexClassicView
 from flask import Flask
-from flask.ext.cors import CORS
 from flask.ext.restful import Api
 
 
@@ -25,18 +24,14 @@ def create_app():
         app.config['TUGBOAT_LOGGING']
     )
 
-    # CORS
-    CORS(
-        app,
-        resource={
-            r'/redirect': {'origins': app.config['TUGBOAT_CORS']}
-        }
-    )
-
     # Add end points
     api = Api(app)
     api.add_resource(IndexView, '/index')
+    api.add_resource(ClassicSearchRedirectView, '/classicSearchRedirect')
     api.add_resource(BumblebeeView, '/redirect')
+    api.add_resource(SimpleClassicView, '/ads')
+    api.add_resource(ComplexClassicView, '/adsabs')
+
 
     return app
 

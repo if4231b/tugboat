@@ -36,11 +36,14 @@
           dataType: "json",
           success: function(data, textStatus) {
             if (data.redirect) {
-               // data.redirect contains the string URL to redirect to
+              // data.redirect contains the string URL to redirect to
               window.location.href = data.redirect;
             } else {
               console.error('Redirect failed' + data);
             }
+          },
+          error: function(xhr, status, error){
+            console.error('redirect returned error, xhr=' + xhr + ', status=' + status + ', error=' + error);
           }
         });
         return false;
