@@ -1,5 +1,10 @@
-Flask==0.10.1
+git+https://github.com/adsabs/ADSMicroserviceUtils.git@v1.0.3
+Werkzeug==0.11.15
+Flask==0.12.2
+flask-discoverer==0.0.2
+Flask-RESTful==0.3.6
+Flask-Testing==0.6.2
 Flask-Cors==2.1.2
-Flask-RESTful==0.3.5
+requests==2.8.1
 gunicorn==0.17.4
 webargs==1.8.1

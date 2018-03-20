@@ -1,3 +1,4 @@
+
 import requests
 from flask import current_app
 
@@ -13,13 +14,7 @@ class Client:
     def __init__(self, config):
         """
         Constructor
-
-        :param config: configuration dictionary of the client
+        :param client_config: configuration dictionary of the client
         """
 
         self.session = requests.Session()
-        self.token = config.get('HARBOUR_CLIENT_ADSWS_API_TOKEN')
-        if self.token:
-            self.session.headers.update(
-                {'Authorization': 'Bearer {0}'.format(self.token)}
-            )
