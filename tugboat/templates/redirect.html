@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <script type="text/javascript">
+    function redirect()  {
+        window.location.href = "{{url|safe}}";
+    }
+    </script>
+</head>
+<body onload="redirect()">
+<h1>Redirecting...</h1>
+<p>You should be redirected automatically to target URL: <a href="{{url|safe}}">{{url|safe}}</a>.  If not click the link.
+</body>
+</html>

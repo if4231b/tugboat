@@ -1,28 +1,25 @@
-# encoding: utf-8
-"""
-Application factory
-"""
 
-import logging.config
-from views import BumblebeeView, IndexView, ClassicSearchRedirectView, SimpleClassicView, ComplexClassicView
-from flask import Flask
-from flask.ext.restful import Api
+from werkzeug.serving import run_simple
 
+from flask_discoverer import Discoverer
+from flask_restful import Api, Resource
 
-def create_app():
+from adsmutils import ADSFlask
+
+from tugboat.views import IndexView, BumblebeeView, ClassicSearchRedirectView, SimpleClassicView, ComplexClassicView
+
+def create_app(**config):
     """
     Create the application and return it to the user
-
     :return: flask.Flask application
     """
-    app = Flask(__name__)
-    app.url_map.strict_slashes = False
 
-    # Load config and logging
-    load_config(app)
-    logging.config.dictConfig(
-        app.config['TUGBOAT_LOGGING']
-    )
+    if config:
+        app = ADSFlask(__name__, local_config=config)
+    else:
+        app = ADSFlask(__name__)
+
+    app.url_map.strict_slashes = False
 
     # Add end points
     api = Api(app)
@@ -32,29 +29,9 @@ def create_app():
     api.add_resource(SimpleClassicView, '/ads')
     api.add_resource(ComplexClassicView, '/adsabs')
 
+    Discoverer(app)
 
     return app
 
-
-def load_config(app):
-    """
-    Loads configuration in the following order:
-        1. config.py
-        2. local_config.py (ignore failures)
-        3. consul (ignore failures)
-    :param app: flask.Flask application instance
-    :return: None
-    """
-
-    app.config.from_pyfile('config.py')
-    app.logger.info('Loaded generic config.py')
-
-    try:
-        app.config.from_pyfile('local_config.py')
-        app.logger.info('Loaded local_config.py')
-    except IOError:
-        app.logger.warning('Could not load local_config.py')
-
 if __name__ == '__main__':
-    app = create_app()
-    app.run(debug=True, use_reloader=False)
+    run_simple('0.0.0.0', 5050, create_app(), use_reloader=False, use_debugger=False)
