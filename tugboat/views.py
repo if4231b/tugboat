@@ -854,12 +854,15 @@ class BumblebeeView(Resource):
             'fq': ['{!bitset}']
         }
 
+        headers = {'Authorization': 'Bearer ' + current_app.config['API_DEV_KEY']}
+
         # POST the query
         # https://api.adsabs.harvard.edu/v1/vault/query
         current_app.logger.info('Contacting vault/query ' + str(current_app.config['TESTING']))
         r = client().post(
         current_app.config['VAULT_QUERY_URL'],
-        data=bigquery_data
+        data=bigquery_data,
+        headers = headers
         )
 
         if r.status_code != 200:
