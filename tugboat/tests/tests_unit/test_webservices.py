@@ -13,7 +13,7 @@ import json
 import unittest
 
 from flask import url_for
-from flask.ext.testing import TestCase
+from flask_testing import TestCase
 from httmock import urlmatch, HTTMock
 from tugboat.app import create_app
 
