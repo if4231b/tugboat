@@ -806,8 +806,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        #
-        self.assertEqual('q=arxiv_class:(' + urllib.quote('"computer science" OR "physics"') + ')' +
+        self.assertEqual('q=keyword:(' + urllib.quote('"computer science" OR "physics"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
         req.args = MultiDict([('arxiv_sel', '')])
@@ -823,6 +822,23 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + \
                          '&error_message=' + urllib.quote('Invalid value for arxiv_sel: ADS'), search)
+
+        req.args = MultiDict([('arxiv_sel', 'astro-ph'), ('arxiv_sel', 'cond-mat'), ('arxiv_sel', 'cs'), ('arxiv_sel', 'gr-qc'),
+                              ('arxiv_sel', 'hep-ex'), ('arxiv_sel', 'hep-lat'), ('arxiv_sel', 'hep-ph'), ('arxiv_sel', 'hep-th'),
+                              ('arxiv_sel', 'math'), ('arxiv_sel', 'math-ph'), ('arxiv_sel', 'nlin'), ('arxiv_sel', 'nucl-ex'),
+                              ('arxiv_sel', 'nucl-th'), ('arxiv_sel', 'physics'), ('arxiv_sel', 'quant-ph'), ('arxiv_sel', 'q-bio')])
+        req.args.update(self.append_default_weights())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=property:(' + urllib.quote("EPRINT_OPENACCESS") + ')' +
+                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+
+        req.args = MultiDict([('db_key', 'AST'), ('arxiv_sel', 'cs'), ('arxiv_sel', 'physics')])
+        req.args.update(self.append_default_weights())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
+                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # astronomy only
 
     def test_ref_stems(self):
         """test ref_stems"""

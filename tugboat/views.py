@@ -773,17 +773,17 @@ class ClassicSearchRedirectView(Resource):
             return
         if self.validate_arxiv_sel(value):
             # if all entries are valid include them, oring them
-            arxiv_sel = ''
             entry = value.split(',')
             # if all the classes are selected apply arxiv:(*) query
             if len(entry) == len(dict_arxiv):
-                arxiv_sel = '*'
+                self.translation.search.append('property:(' + urllib.quote("EPRINT_OPENACCESS") + ')')
             else:
+                arxiv_sel = ''
                 for e in entry:
                     if len(arxiv_sel) > 0:
                         arxiv_sel += ' OR '
                     arxiv_sel += '"' + dict_arxiv[e].lower() + '"'
-            self.translation.search.append('arxiv_class:(' + urllib.quote(arxiv_sel) + ')')
+                self.translation.search.append('keyword:(' + urllib.quote(arxiv_sel) + ')')
         else:
             # unrecognizable value
             self.translation.error_message.append(urllib.quote('Invalid value for arxiv_sel: {}'.format(value)))
