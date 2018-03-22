@@ -36,6 +36,10 @@ class ComplexClassicView(Resource):
     def get(self):
         return current_app.send_static_file('fielded_classic_w_BBB_button.html')
 
+class ComplexClassicArXivView(Resource):
+    """for testing, show standard ads search page with arXiv classes visible"""
+    def get(self):
+        return current_app.send_static_file('preprint_service_w_BBB_button.html')
 
 class TranslationValue():
     """simple singleton container class to hold translation components
@@ -214,7 +218,11 @@ class ClassicSearchRedirectView(Resource):
         group_sel = request.args.getlist('group_sel', type=str)
         if len(group_sel) > 0:
             args['group_sel'] = ','.join(group_sel)
-        # similarly arxiv_sel
+        # similarly db_key
+        db_key = request.args.getlist('db_key', type=str)
+        if len(db_key) > 0:
+            args['db_key'] = ','.join(db_key)
+        # and arxiv_sel
         arxiv_sel = request.args.getlist('arxiv_sel', type=str)
         if len(arxiv_sel) > 0:
             args['arxiv_sel'] = ','.join(arxiv_sel)
@@ -433,24 +441,44 @@ class ClassicSearchRedirectView(Resource):
             urllib.quote(':[{:04d}-{:02d}-{:02d} TO {:04d}-{:02}-{:02d}]'.format(start_year, start_month, start_day,
                                                                                  end_year, end_month, end_day))
         self.translation.search.append(search)
-            
+
+    def validate_db_key(self, db_key):
+        """Validate database selections"""
+        valid_db_key = ['AST', 'PHY', 'PRE']
+        if len(db_key) == 0:
+            return False
+        entry = db_key.split(',')
+        for e in entry:
+            if e not in valid_db_key:
+                return False
+        return True
+
     def translate_database(self, args):
         """translate which database to use
 
         only support for ast and phy, bbb does not support arxiv value, classic does not support general
-        no support to select multiple dbs
         """
-        db = args.pop('db_key', None)
-        filter = []
-        classic_db_to_bbb = {'AST': 'astronomy', 'GEN': 'general', 'PHY': 'physics'}
-        if db:
-            bbb_db = classic_db_to_bbb.pop(db, None)
-            if bbb_db:
-                f = urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_database}') + \
-                    '&fq_database=(' + urllib.quote('database:"{}"'.format(bbb_db)) + ')'
-                self.translation.filter.append(f)
-            else:
-                self.translation.warning_message.append('invalid database from classic {}'.format(db))
+        dict_db = {'AST': 'astronomy',
+                   'PHY': 'physics',
+                   'PRE': 'e-prints'}
+        value = args.pop('db_key', None)
+        if value is None:
+            return
+        if self.validate_db_key(value):
+            # if all entries are valid include them, anding them
+            db_key = ''
+            entry = value.split(',')
+            for e in entry:
+                if e != 'PRE':
+                    if len(db_key) > 0:
+                        db_key += ' AND '
+                    db_key += 'database:"' + dict_db[e] + '"'
+            if len(db_key) > 0:
+                self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_database}') + \
+                                               '&fq_database=(' + urllib.quote(db_key) + ')')
+        else:
+            # unrecognizable value
+            self.translation.error_message.append(urllib.quote('Invalid database from classic {}'.format(value)))
 
     def translate_results_subset(self, args):
         """subset/pagination currently not supported by bumblebee
@@ -524,8 +552,8 @@ class ClassicSearchRedirectView(Resource):
         if data_and is None:
             operator = None
         elif data_and == 'ALL':
-            # when 'A bibliographic entry' radio button is selected
-            operator = ''
+            # when 'A bibliographic entry' radio button is selected => include everything in results, which is default
+            operator = None
         elif data_and == 'NO':
             # when 'At least one of the following (OR)' radio button is selected
             operator = 'OR'
@@ -559,10 +587,7 @@ class ClassicSearchRedirectView(Resource):
             value = args.pop('group_sel', None)
             if value is None:
                 return
-            if operator == '*':
-                # if operator is ALL, whether any group_sel is provided, include everything
-                self.translation.search.append(urllib.quote('bibgroup:(*)'))
-            elif self.validate_group_sel(value):
+            if self.validate_group_sel(value):
                 # if all entries are valid include them, adding in the selected operator
                 group_sel = ''
                 entry = value.split(',')
@@ -583,8 +608,8 @@ class ClassicSearchRedirectView(Resource):
         if group_and is None:
             operator = None
         elif group_and == 'ALL':
-            # when 'All Groups' radio button is selected
-            operator = '*'
+            # when 'All Groups' radio button is selected => include everything in results, which is default
+            operator = None
         elif group_and == 'NO':
             # when 'At least one of the following groups (OR)' radio button is selected
             operator = 'OR'
@@ -742,17 +767,23 @@ class ClassicSearchRedirectView(Resource):
         value = args.pop('arxiv_sel', None)
         if value is None:
             return
+        # consider arXiv only if other dbs are not selected
+        filter = urllib.unquote(''.join(self.translation.filter))
+        if 'database:"astronomy"' in filter or 'database:"physics"' in filter:
+            return
         if self.validate_arxiv_sel(value):
-            # if all entries are valid include them, adding in the selected operator
-            arxiv_sel = ''
+            # if all entries are valid include them, oring them
             entry = value.split(',')
-            for e in entry:
-                if len(arxiv_sel) > 0:
-                    arxiv_sel += ' OR '
-                arxiv_sel += 'keyword_facet:"' + dict_arxiv[e].lower() + '"'
-            if len(arxiv_sel) > 0:
-                self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_keyword_facet}') + \
-                                               '&fq_keyword_facet=(' + urllib.quote(arxiv_sel) + ')')
+            # if all the classes are selected apply arxiv:(*) query
+            if len(entry) == len(dict_arxiv):
+                self.translation.search.append('property:(' + urllib.quote("EPRINT_OPENACCESS") + ')')
+            else:
+                arxiv_sel = ''
+                for e in entry:
+                    if len(arxiv_sel) > 0:
+                        arxiv_sel += ' OR '
+                    arxiv_sel += '"' + dict_arxiv[e].lower() + '"'
+                self.translation.search.append('keyword:(' + urllib.quote(arxiv_sel) + ')')
         else:
             # unrecognizable value
             self.translation.error_message.append(urllib.quote('Invalid value for arxiv_sel: {}'.format(value)))
@@ -854,12 +885,15 @@ class BumblebeeView(Resource):
             'fq': ['{!bitset}']
         }
 
+        headers = {'Authorization': 'Bearer ' + current_app.config['API_DEV_KEY']}
+
         # POST the query
         # https://api.adsabs.harvard.edu/v1/vault/query
         current_app.logger.info('Contacting vault/query ' + str(current_app.config['TESTING']))
         r = client().post(
         current_app.config['VAULT_QUERY_URL'],
-        data=bigquery_data
+        data=bigquery_data,
+        headers = headers
         )
 
         if r.status_code != 200:
