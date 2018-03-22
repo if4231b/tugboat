@@ -222,9 +222,8 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22general%22)' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
-                         search) # general only
+        self.assertEqual('q=*:*&sort=' + urllib.quote('date desc, bibcode desc') +
+                         '&error_message=' + urllib.quote('Invalid database from classic GEN'), search) # general only
 
     def test_article_sel(self):
         """article_sel to property:article"""
@@ -495,12 +494,12 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # no value
 
-        req.args = MultiDict([('data_and', 'ALL'), ('article', 'YES'), ('gif_link', 'YES')])
+        req.args = MultiDict([('data_and', 'NO'), ('article', 'YES'), ('gif_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' +
-                         urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + '  ' + urllib.quote('esources:("ADS_SCAN")') +
+                         urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' OR ' + urllib.quote('esources:("ADS_SCAN")') +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
         req.args = MultiDict([('data_and', 'NO'), ('article', 'YES'), ('gif_link', 'YES')])
@@ -539,7 +538,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('article_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('article_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -552,7 +551,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('gif_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('gif_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -563,7 +562,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('article', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('article', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -574,7 +573,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('toc_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('toc_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -585,7 +584,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('ref_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('ref_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -596,7 +595,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('citation_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('citation_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -607,7 +606,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('associated_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('associated_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -618,7 +617,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('simb_obj', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('simb_obj', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -629,7 +628,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('ned_obj', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('ned_obj', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -640,7 +639,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('pds_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('pds_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -651,7 +650,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('aut_note', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('aut_note', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -662,7 +661,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('ar_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('ar_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -673,7 +672,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('multimedia_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('multimedia_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -684,7 +683,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('spires_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('spires_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -695,7 +694,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('abstract', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('abstract', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -706,7 +705,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('lib_link', 'YES')])
+        req.args = MultiDict([('data_and', 'YES'), ('lib_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -717,7 +716,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_and', 'ALL'), ('abstract', 'foo')])
+        req.args = MultiDict([('data_and', 'YES'), ('abstract', 'foo')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -807,8 +806,8 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_keyword_facet}') +
-                         '&fq_keyword_facet=(' + urllib.quote('keyword_facet:"computer science" OR keyword_facet:"physics"') + ')' +
+        #
+        self.assertEqual('q=arxiv_class:(' + urllib.quote('"computer science" OR "physics"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
         req.args = MultiDict([('arxiv_sel', '')])

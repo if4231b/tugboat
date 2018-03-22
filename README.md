@@ -22,18 +22,12 @@ In one terminal do
     $ vim local_config.py # edit, edit
     $ python wsgi.py
 
-In another terminal do
-
-    $ source python/bin/activate
-    $ cd tugboat/static
-    $ python -m SimpleHTTPServer
-    
 
 ## To see identified articles redirect to BBB go to :
 
 Either from browser go to
 
-    http://localhost:8000/index.html
+    http://localhost:5000/index
 
 or curl for example,
 
@@ -46,7 +40,7 @@ which returns
     
 ## To see classic query converted and get redirected to BBB go to URL:
 
-    http://localhost:8000/fielded_classic_w_BBB_button.html
+    http://localhost:5000/adsabs
     
 ### Classic Search Redirection Status
 Currently, most of search parameters from classic are translated to ads bumblebee and an http redirect is returned.
