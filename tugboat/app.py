@@ -23,12 +23,12 @@ def create_app(**config):
 
     # Add end points
     api = Api(app)
-    api.add_resource(IndexView, '/index')
-    api.add_resource(ClassicSearchRedirectView, '/classicSearchRedirect')
-    api.add_resource(BumblebeeView, '/redirect')
-    api.add_resource(SimpleClassicView, '/ads')
-    api.add_resource(ComplexClassicView, '/adsabs')
-    api.add_resource(ComplexClassicArXivView, '/arxiv')
+    api.add_resource(IndexView, '/tugboat/index')
+    api.add_resource(ClassicSearchRedirectView, '/tugboat/classicSearchRedirect')
+    api.add_resource(BumblebeeView, '/tugboat/redirect')
+    api.add_resource(SimpleClassicView, '/tugboat/ads')
+    api.add_resource(ComplexClassicView, '/tugboat/adsabs')
+    api.add_resource(ComplexClassicArXivView, '/tugboat/arxiv')
 
     Discoverer(app)
 
