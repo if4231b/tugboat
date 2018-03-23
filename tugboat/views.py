@@ -237,12 +237,13 @@ class ClassicSearchRedirectView(Resource):
         # consider using reflection to obtain this list
         funcs = [self.translate_authors, self.translate_pubdate,
                  self.translate_entry_date, self.translate_results_subset,
-                 self.translate_return_req, self.translate_qsearch,
-                 self.translate_database, self.translate_property_filters,
-                 self.translate_jou_pick, self.translate_data_entries,
-                 self.translate_group_sel, self.translate_sort,
-                 self.translate_to_ignore, self.translate_weights,
-                 self.translate_arxiv_sel, self.translate_ref_stems,
+                 self.translate_return_req, self.translate_article_sel,
+                 self.translate_qsearch, self.translate_database,
+                 self.translate_property_filters, self.translate_jou_pick,
+                 self.translate_data_entries, self.translate_group_sel,
+                 self.translate_sort, self.translate_to_ignore,
+                 self.translate_weights, self.translate_arxiv_sel,
+                 self.translate_ref_stems,
                  ]
         for f in funcs:
             f(args)  # each may contribute to self.translation singleton
@@ -270,6 +271,7 @@ class ClassicSearchRedirectView(Resource):
             # pass their names out ads/bumblebee
             solr_query += '&unprocessed_parameter=' + urllib.quote('Parameters not processed: ' + ' '.join(args.keys()))
 
+        print '.......solr_query=', solr_query
         return solr_query
 
 
@@ -501,10 +503,12 @@ class ClassicSearchRedirectView(Resource):
             pass
         elif jou_pick == 'NO':
             # only include refereed journals
-            self.translation.filter.append(urllib.quote('{!type=aqp v=$fq_property}&fq_property=(property:"refereed")'))
+            self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
+                                           '&fq_property=(' + urllib.quote("refereed") + ')')
         elif jou_pick == 'EXCL':
             # only include non-refereed
-            self.translation.filter.append(urllib.quote('{!type=aqp v=$fq_property}&fq_property=(property:"notrefereed")'))
+            self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
+                                           '&fq_property=(' + urllib.quote("notrefereed") + ')')
         else:
             self.translation.error_message.append(urllib.quote('Invalid value for jou_pick: {}'.format(jou_pick)))
 
@@ -640,13 +644,25 @@ class ClassicSearchRedirectView(Resource):
 
         several search fields translate to a Bumblebee filter query with property
         """
-        to_bbb_property = {'article_sel': 'article', 'data_link': 'data',
+        to_bbb_property = {'data_link': 'data',
                            'open_link': 'OPENACCESS', 'preprint_link': 'eprint'}
         clauses = []
         for key in to_bbb_property.keys():
             if str(args.pop(key, None)).upper() == 'YES':
                 value = to_bbb_property[key]
                 self.translation.filter.append(urllib.quote('{{!type=aqp v=$fq_doctype}}&fq_doctype=(doctype:"{}")'.format(to_bbb_property.get(key))))
+
+    def translate_article_sel(self, args):
+        article_sel = args.pop('article_sel', None)
+        if article_sel is None:
+            pass
+        elif article_sel == 'YES':
+            # only include article journals
+            self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
+                                           '&fq_property=(' + urllib.quote("article") + ')')
+        else:
+            self.translation.error_message.append(urllib.quote('Invalid value for article_sel: {}'.format(article_sel)))
+
 
     def translate_qsearch(self, args):
         """translate qsearch parameter from single input form on classic_w_BBB_button.html
