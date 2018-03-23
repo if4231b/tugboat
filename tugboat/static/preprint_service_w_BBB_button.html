@@ -5,7 +5,6 @@
 <!--RAW FILE-->
 <head>
 <!-- <base href="http://localhost:5000/" /> -->
-<base href="https://ui.adsabs.harvard.edu/tugboat/" />
 <META NAME="robots" CONTENT="noarchive">
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
 <TITLE>SAO/NASA ADS Custom Query Form Wed Mar 21 18:01:09 2018
@@ -228,9 +227,9 @@ document.write("<input type=\"hidden\" name=\"forward\" value=\"" + absadr + "\"
 <hr><input style="background-color: #55bbff; color: #000000"
   type="submit" value=" Send Query to Classic">&nbsp;&nbsp;&nbsp; <input
   style="background-color: #6084D9; color: #ffffff" type="submit" name="foobar"
-  value=" Send Query to ADS " formaction="/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
+  value=" Send Query to ADS " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
 <br>Databases to query:
-<input type="checkbox" checked name="db_key" value="AST">&nbsp;<a href="/adsabs" onMouseOver="ql(0,-50)" onMouseOut="hl(-50)">Astronomy</a>&nbsp;&nbsp;&nbsp;<input type="checkbox"  name="db_key" value="PHY">&nbsp;<a href="http://adsabs.harvard.edu/physics_service.html" onMouseOver="ql(1,-50)" onMouseOut="hl(-50)">Physics</a>&nbsp;&nbsp;&nbsp;<input type="checkbox" checked name="db_key" value="PRE">&nbsp;<a href="/arxiv" onMouseOver="ql(2,-50)" onMouseOut="hl(-50)">arXiv e-prints</a>&nbsp;&nbsp;&nbsp;<br>
+<input type="checkbox" checked name="db_key" value="AST">&nbsp;<a href="/tugboat/adsabs" onMouseOver="ql(0,-50)" onMouseOut="hl(-50)">Astronomy</a>&nbsp;&nbsp;&nbsp;<input type="checkbox"  name="db_key" value="PHY">&nbsp;<a href="http://adsabs.harvard.edu/physics_service.html" onMouseOver="ql(1,-50)" onMouseOut="hl(-50)">Physics</a>&nbsp;&nbsp;&nbsp;<input type="checkbox" checked name="db_key" value="PRE">&nbsp;<a href="/tugboat/arxiv" onMouseOver="ql(2,-50)" onMouseOut="hl(-50)">arXiv e-prints</a>&nbsp;&nbsp;&nbsp;<br>
 <table><tr></tr><tr><td><input type="checkbox" checked name="arxiv_sel" value="astro-ph"> astro-ph </td><td><input type="checkbox" checked name="arxiv_sel" value="cond-mat"> cond-mat </td><td><input type="checkbox" checked name="arxiv_sel" value="cs"> cs </td><td><input type="checkbox" checked name="arxiv_sel" value="gr-qc"> gr-qc </td><td><input type="checkbox" checked name="arxiv_sel" value="hep-ex"> hep-ex </td><td><input type="checkbox" checked name="arxiv_sel" value="hep-lat"> hep-lat </td><td><input type="checkbox" checked name="arxiv_sel" value="hep-ph"> hep-ph </td><td><input type="checkbox" checked name="arxiv_sel" value="hep-th"> hep-th </td></tr><tr><td><input type="checkbox" checked name="arxiv_sel" value="math"> math </td><td><input type="checkbox" checked name="arxiv_sel" value="math-ph"> math-ph </td><td><input type="checkbox" checked name="arxiv_sel" value="nlin"> nlin </td><td><input type="checkbox" checked name="arxiv_sel" value="nucl-ex"> nucl-ex </td><td><input type="checkbox" checked name="arxiv_sel" value="nucl-th"> nucl-th </td><td><input type="checkbox" checked name="arxiv_sel" value="physics"> physics </td><td><input type="checkbox" checked name="arxiv_sel" value="quant-ph"> quant-ph </td><td><input type="checkbox" checked name="arxiv_sel" value="q-bio"> q-bio </td></tr></table></div>
 <input type="hidden" name="qform" value="PRE"><div align="center">
 <hr><pre>   Direct Queries:              <b>Enter <A HREF="http://adsabs.harvard.edu/cgi-bin/xauthor_queryform?db_key=PRE">Authors</A></b>: (Last, First M)
@@ -258,7 +257,7 @@ Return <input name="nr_to_return" size="5" value="200"> items starting with numb
 <hr>input style="background-color: #55bbff; color: #000000"
   type="submit" value=" Send Query to Classic">&nbsp;&nbsp;&nbsp; <input
   style="background-color: #6084D9; color: #ffffff" type="submit" name="foobar"
-  value=" Send Query to ADS " formaction="/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
+  value=" Send Query to ADS " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
 </div>
 <hr><h4 align="center"><A HREF="http://adsabs.harvard.edu/pre_bib.html">Journal/Volume/Page</A>&nbsp;&nbsp; <A HREF="http://adsabs.harvard.edu/pre_toc.html">Current Journals</A>&nbsp;&nbsp; <A HREF="http://adsabs.harvard.edu/custom_toc.html">Unread Journals</A></h4>
 <HR><H3 align="center"><A NAME="filters">FILTERS</A></H3><HR><pre>
@@ -273,7 +272,7 @@ Return <input name="nr_to_return" size="5" value="200"> items starting with numb
 <div align="center"><HR>input style="background-color: #55bbff; color: #000000"
   type="submit" value=" Send Query to Classic">&nbsp;&nbsp;&nbsp; <input
   style="background-color: #6084D9; color: #ffffff" type="submit" name="foobar"
-  value=" Send Query to ADS " formaction="/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
+  value=" Send Query to ADS " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
 </div>
 <hr>
 <table align="center" width="100%"><tr><td><h3 align="center"><A NAME="Sorting">SORTING</a></h3>
@@ -329,7 +328,7 @@ Return <input name="nr_to_return" size="5" value="200"> items starting with numb
 <hr>input style="background-color: #55bbff; color: #000000"
   type="submit" value=" Send Query to Classic">&nbsp;&nbsp;&nbsp; <input
   style="background-color: #6084D9; color: #ffffff" type="submit" name="foobar"
-  value=" Send Query to ADS " formaction="/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
+  value=" Send Query to ADS " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
 </div>
 <input type="hidden" name="version" value="1">
 </form>
