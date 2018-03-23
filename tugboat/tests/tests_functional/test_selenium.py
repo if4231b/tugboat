@@ -63,7 +63,7 @@ class TestBumblebeeView(LiveServerTestCase):
         """
         Get the url for a live server with the relevant view
         """
-        return '{}/{}'.format(self.get_server_url(), view)
+        return '{}/tugboat/{}'.format(self.get_server_url(), view)
 
     def test_server_firefox(self):
         """
