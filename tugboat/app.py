@@ -6,7 +6,7 @@ from flask_restful import Api, Resource
 
 from adsmutils import ADSFlask
 
-from tugboat.views import IndexView, BumblebeeView, ClassicSearchRedirectView, SimpleClassicView, ComplexClassicView, ComplexClassicArXivView
+from tugboat.views import IndexView, BumblebeeView, ClassicSearchRedirectView, SimpleClassicView, ComplexClassicView, ComplexClassicArXivView, ComplexClassicPhysicsView
 
 def create_app(**config):
     """
@@ -29,6 +29,7 @@ def create_app(**config):
     api.add_resource(SimpleClassicView, '/tugboat/ads')
     api.add_resource(ComplexClassicView, '/tugboat/adsabs')
     api.add_resource(ComplexClassicArXivView, '/tugboat/arxiv')
+    api.add_resource(ComplexClassicPhysicsView, '/tugboat/physics')
 
     Discoverer(app)
 
