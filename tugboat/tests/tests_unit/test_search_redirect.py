@@ -438,7 +438,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') +
-                         '&fq_property=(' + urllib.quote("refereed") + ')' +
+                         '&fq_property=(' + urllib.quote('property:("refereed")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search) # only refereed
 
         req.args = MultiDict([('jou_pick', 'EXCL')])
@@ -446,7 +446,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') +
-                         '&fq_property=(' + urllib.quote("notrefereed") + ')' +
+                         '&fq_property=(' + urllib.quote('property:("not refereed")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)    # exclude refereed
 
         req.args = MultiDict([('jou_pick', 'foo')])

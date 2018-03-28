@@ -41,6 +41,11 @@ class ComplexClassicArXivView(Resource):
     def get(self):
         return current_app.send_static_file('preprint_service_w_BBB_button.html')
 
+class ComplexClassicPhysicsView(Resource):
+    """for testing, show standard ads search page with physics classes visible"""
+    def get(self):
+        return current_app.send_static_file('physics_service_w_BBB_button.html')
+
 class TranslationValue():
     """simple singleton container class to hold translation components
 
@@ -504,11 +509,11 @@ class ClassicSearchRedirectView(Resource):
         elif jou_pick == 'NO':
             # only include refereed journals
             self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
-                                           '&fq_property=(' + urllib.quote("refereed") + ')')
+                                           '&fq_property=(' + urllib.quote('property:("refereed")') + ')')
         elif jou_pick == 'EXCL':
             # only include non-refereed
             self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
-                                           '&fq_property=(' + urllib.quote("notrefereed") + ')')
+                                           '&fq_property=(' + urllib.quote('property:("not refereed")') + ')')
         else:
             self.translation.error_message.append(urllib.quote('Invalid value for jou_pick: {}'.format(jou_pick)))
 
