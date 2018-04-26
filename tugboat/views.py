@@ -330,7 +330,7 @@ class ClassicSearchRedirectView(Resource):
             authors = self.classic_field_to_array(authors_str)
             search += urllib.quote(author_field) + '('
             for author in authors:
-                search += urllib.quote(author + connector)
+                search += urllib.quote('"' + author + '"' + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final
             search += ')'
             self.translation.search.append(search)
