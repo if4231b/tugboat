@@ -276,7 +276,6 @@ class ClassicSearchRedirectView(Resource):
             # pass their names out ads/bumblebee
             solr_query += '&unprocessed_parameter=' + urllib.quote('Parameters not processed: ' + ' '.join(args.keys()))
 
-        print '.......solr_query=', solr_query
         return solr_query
 
 
@@ -330,8 +329,9 @@ class ClassicSearchRedirectView(Resource):
             authors = self.classic_field_to_array(authors_str)
             search += urllib.quote(author_field) + '('
             for author in authors:
-                # make sure user has not specified double quotes, and then put author in double quote
-                search += urllib.quote('"' + author.replace('"', '') + '"' + connector)
+                if len(author) > 1:
+                    # make sure user has not specified double quotes, and then put author in double quote
+                    search += urllib.quote('"' + author.replace('"', '') + '"' + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final
             search += ')'
             self.translation.search.append(search)
