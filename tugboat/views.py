@@ -12,6 +12,8 @@ from webargs.flaskparser import parser
 import urllib
 from datetime import datetime
 import calendar
+import re
+from collections import OrderedDict
 
 class IndexView(Resource):
     """
@@ -244,11 +246,10 @@ class ClassicSearchRedirectView(Resource):
                  self.translate_entry_date, self.translate_results_subset,
                  self.translate_return_req, self.translate_article_sel,
                  self.translate_qsearch, self.translate_database,
-                 self.translate_property_filters, self.translate_jou_pick,
-                 self.translate_data_entries, self.translate_group_sel,
-                 self.translate_sort, self.translate_to_ignore,
-                 self.translate_weights, self.translate_arxiv_sel,
-                 self.translate_ref_stems,
+                 self.translate_jou_pick, self.translate_data_entries,
+                 self.translate_group_sel, self.translate_sort,
+                 self.translate_to_ignore, self.translate_weights,
+                 self.translate_arxiv_sel, self.translate_ref_stems,
                  ]
         for f in funcs:
             f(args)  # each may contribute to self.translation singleton
@@ -276,7 +277,6 @@ class ClassicSearchRedirectView(Resource):
             # pass their names out ads/bumblebee
             solr_query += '&unprocessed_parameter=' + urllib.quote('Parameters not processed: ' + ' '.join(args.keys()))
 
-        print '.......solr_query=', solr_query
         return solr_query
 
 
@@ -330,8 +330,9 @@ class ClassicSearchRedirectView(Resource):
             authors = self.classic_field_to_array(authors_str)
             search += urllib.quote(author_field) + '('
             for author in authors:
-                # make sure user has not specified double quotes, and then put author in double quote
-                search += urllib.quote('"' + author.replace('"', '') + '"' + connector)
+                if len(author) > 1:
+                    # make sure user has not specified double quotes, and then put author in double quote
+                    search += urllib.quote('"' + author.replace('"', '') + '"' + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final
             search += ')'
             self.translation.search.append(search)
@@ -479,7 +480,7 @@ class ClassicSearchRedirectView(Resource):
             for e in entry:
                 if e != 'PRE':
                     if len(db_key) > 0:
-                        db_key += ' AND '
+                        db_key += ' OR '
                     db_key += 'database:"' + dict_db[e] + '"'
             if len(db_key) > 0:
                 self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_database}') + \
@@ -520,7 +521,8 @@ class ClassicSearchRedirectView(Resource):
 
     def translate_data_entries(self, args):
         """ Convert all classic data entries search related parameters to ads/bumblebee """
-        dict_entries = {'article_link'    : 'esources:("PUB_PDF" OR "PUB_HTML" OR "AUTHOR_PDF" OR "AUTHOR_HTML" OR "ADS_PDF" OR "ADS_SCAN")',
+        dict_entries = {'data_link'       : 'esources:(*)',
+                        'article_link'    : 'esources:("PUB_PDF" OR "PUB_HTML" OR "AUTHOR_PDF" OR "AUTHOR_HTML" OR "ADS_PDF" OR "ADS_SCAN")',
                         'gif_link'        : 'esources:("ADS_SCAN")',
                         'article'         : 'esources:("PUB_PDF" OR "PUB_HTML")',
                         'preprint_link'   : 'esources:("EPRINT_HTML")',
@@ -537,6 +539,7 @@ class ClassicSearchRedirectView(Resource):
                         'multimedia_link' : 'property:("PRESENTATION")',
                         'spires_link'     : 'property:("INSPIRE")',
                         'abstract'        : 'abstract:(*)',
+                        'open_link'       : 'property:("OPENACCESS")'
         }
 
         operator = self.translate_data_and(args)
@@ -645,19 +648,6 @@ class ClassicSearchRedirectView(Resource):
         else:
             self.translation.error_message.append(urllib.quote('Invalid value for return_req({}), should be "result"'.format(return_req)))
 
-    def translate_property_filters(self, args):
-        """filter query for property 
-
-        several search fields translate to a Bumblebee filter query with property
-        """
-        to_bbb_property = {'data_link': 'data',
-                           'open_link': 'OPENACCESS', 'preprint_link': 'eprint'}
-        clauses = []
-        for key in to_bbb_property.keys():
-            if str(args.pop(key, None)).upper() == 'YES':
-                value = to_bbb_property[key]
-                self.translation.filter.append(urllib.quote('{{!type=aqp v=$fq_doctype}}&fq_doctype=(doctype:"{}")'.format(to_bbb_property.get(key))))
-
     def translate_article_sel(self, args):
         article_sel = args.pop('article_sel', None)
         if article_sel is None:
@@ -669,14 +659,24 @@ class ClassicSearchRedirectView(Resource):
         else:
             self.translation.error_message.append(urllib.quote('Invalid value for article_sel: {}'.format(article_sel)))
 
-
     def translate_qsearch(self, args):
         """translate qsearch parameter from single input form on classic_w_BBB_button.html
 
         return nonfielded metadata search query
         """
+        REGEX_MATCH_YEAR_RANGE = OrderedDict([
+            (re.compile(r"([12][089]\d\d-[12][089]\d\d)"), r"year:\1"),
+            (re.compile(r"([12][089]\d\d)-"), r"year:\1-" + str(datetime.today().year+1)),
+            (re.compile(r"([12][089]\d\d)"), r"year:\1"),
+        ])
+
         qsearch = args.pop('qsearch', None)
         if qsearch:
+            qsearch = qsearch.replace('intitle:', 'title:')
+            for key in REGEX_MATCH_YEAR_RANGE:
+                if key.search(qsearch) is not None:
+                    qsearch = key.sub(REGEX_MATCH_YEAR_RANGE[key], qsearch)
+                    break
             self.translation.search.append(qsearch)
 
     def translate_sort(self, args):
