@@ -1,4 +1,5 @@
-# encoding: utf-8
+#!/bin/sh
+#encoding: utf-8
 """
 Views
 """
@@ -521,24 +522,24 @@ class ClassicSearchRedirectView(Resource):
 
     def translate_data_entries(self, args):
         """ Convert all classic data entries search related parameters to ads/bumblebee """
-        dict_entries = {'data_link'       : 'esources:(*)',
+        dict_entries = {'data_link'       : 'esources:*',
                         'article_link'    : 'esources:("PUB_PDF" OR "PUB_HTML" OR "AUTHOR_PDF" OR "AUTHOR_HTML" OR "ADS_PDF" OR "ADS_SCAN")',
                         'gif_link'        : 'esources:("ADS_SCAN")',
                         'article'         : 'esources:("PUB_PDF" OR "PUB_HTML")',
                         'preprint_link'   : 'esources:("EPRINT_HTML")',
                         'toc_link'        : 'property:("TOC")',
-                        'ref_link'        : 'reference:(*)',
+                        'ref_link'        : 'reference:*',
                         'citation_link'   : 'citation_count:[1 TO *]',
                         'associated_link' : 'property:("ASSOCIATED")',
                         'simb_obj'        : 'data:("simbad")',
                         'ned_obj'         : 'data:("ned")',
-                        'pds_link'        : 'property:("PDS")',
+                        'pds_link'        : 'data:("PDS")',
                         'aut_note'        : 'property:("NOTE")',   # need to verify this later, it is being implemented 3/12
                         'lib_link'        : 'property:("LIBRARYCATALOG")',
                         'ar_link'         : 'read_count:[1 TO *]',
                         'multimedia_link' : 'property:("PRESENTATION")',
                         'spires_link'     : 'property:("INSPIRE")',
-                        'abstract'        : 'abstract:(*)',
+                        'abstract'        : 'abstract:*',
                         'open_link'       : 'property:("OPENACCESS")'
         }
 
@@ -654,8 +655,8 @@ class ClassicSearchRedirectView(Resource):
             pass
         elif article_sel == 'YES':
             # only include article journals
-            self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
-                                           '&fq_property=(' + urllib.quote("article") + ')')
+            self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_doctype}') + \
+                                           '&fq_doctype=(' + urllib.quote_plus('doctype_facet_hier:"0/Article"') + ')')
         else:
             self.translation.error_message.append(urllib.quote('Invalid value for article_sel: {}'.format(article_sel)))
 

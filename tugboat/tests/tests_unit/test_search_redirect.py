@@ -234,10 +234,9 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') +
-                         '&fq_property=(' + urllib.quote("article") + ')' +
+        self.assertEqual('q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_doctype}') +
+                         '&fq_doctype=(' + urllib.quote_plus('doctype_facet_hier:"0/Article"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)
-
         req.args = MultiDict([('article_sel', 'NO')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
@@ -250,52 +249,45 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('data_link', 'YES')])
+        req.args = MultiDict([('data_link', 'YES'), ('data_and', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"data")') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('esources:*') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
     def test_preprint_link(self):
         """preprint_link to property:eprint"""
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('preprint_link', 'YES')])
+        req.args = MultiDict([('preprint_link', 'YES'), ('data_and', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"eprint")') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('esources:("EPRINT_HTML")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
     def test_open_link(self):
         """open_link to property:OPENACCESS"""
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('open_link', 'YES')])
+        req.args = MultiDict([('open_link', 'YES'), ('data_and', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"OPENACCESS")') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
-                         search)
+        self.assertEqual('q=' + urllib.quote('property:("OPENACCESS")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
     def test_multiple_link_properties(self):
         """multiple Bumblebee property fields set"""
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('open_link', 'YES'), ('data_link', 'YES')])
+        req.args = MultiDict([('open_link', 'YES'), ('data_link', 'YES'), ('data_and', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        # should comparison permit fq clauses to be in different order?
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"data")') +
-                         '&fq=' + urllib.quote('{!type=aqp v=$fq_doctype}&fq_doctype=(doctype:"OPENACCESS")') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
-                         search)
+        self.assertEqual('q=' + urllib.quote('esources:*') + ' AND ' +  urllib.quote('property:("OPENACCESS")') +
+                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
     def test_classic_parameters_entry_date(self):
         """test entry date"""
@@ -597,7 +589,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('reference:(*)') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('reference:*') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
     def test_citation_link(self):
         """test citation_link"""
@@ -652,7 +644,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('property:("PDS")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('data:("PDS")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
     def test_aut_note(self):
         """test aut_note"""
@@ -707,7 +699,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('abstract:(*)') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('abstract:*') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
     def test_lib_link(self):
         """test lib_link"""
