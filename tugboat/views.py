@@ -247,10 +247,10 @@ class ClassicSearchRedirectView(Resource):
                  self.translate_entry_date, self.translate_results_subset,
                  self.translate_return_req, self.translate_article_sel,
                  self.translate_qsearch, self.translate_database,
-                 self.translate_jou_pick, self.translate_data_entries,
-                 self.translate_group_sel, self.translate_sort,
-                 self.translate_to_ignore, self.translate_weights,
-                 self.translate_arxiv_sel, self.translate_ref_stems,
+                 self.translate_jou_pick, self.translate_group_sel,
+                 self.translate_sort, self.translate_to_ignore,
+                 self.translate_weights, self.translate_arxiv_sel,
+                 self.translate_ref_stems,
                  ]
         for f in funcs:
             f(args)  # each may contribute to self.translation singleton
@@ -259,6 +259,9 @@ class ClassicSearchRedirectView(Resource):
         self.translate_simple(args, 'object', 'object')
         self.translate_simple(args, 'title', 'title')
         self.translate_simple(args, 'text', 'abs')
+
+        # this is a filter on the classic side but in solr search is not treated as such
+        self.translate_data_entries(args)
 
         # combine translation fragments in self.translation to ads/bumblebee parameter string
         if len(self.translation.search) == 0:
@@ -336,6 +339,9 @@ class ClassicSearchRedirectView(Resource):
                     search += urllib.quote('"' + author.replace('"', '') + '"' + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final
             search += ')'
+            # fields in search are ORed
+            if len(self.translation.search) > 0:
+                self.translation.search.append('OR')
             self.translation.search.append(search)
 
     def translate_simple(self, args, classic_param, bbb_param):
@@ -357,6 +363,9 @@ class ClassicSearchRedirectView(Resource):
                 search += urllib.quote(term + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final connector
             search += ')'
+            # fields in search are ORed
+            if len(self.translation.search) > 0:
+                self.translation.search.append('OR')
             self.translation.search.append(search)
 
     def translate_pubdate(self, args):
@@ -543,6 +552,7 @@ class ClassicSearchRedirectView(Resource):
                         'open_link'       : 'property:("OPENACCESS")'
         }
 
+        search = []
         operator = self.translate_data_and(args)
         if operator is not None:
             # each may contribute to self.translation singleton
@@ -553,12 +563,17 @@ class ClassicSearchRedirectView(Resource):
                     pass
                 elif value == 'YES':
                     # include entry, first add the operator
-                    if (operator == 'NOT') or len(self.translation.search) > 0:
-                        self.translation.search.append(operator)
-                    self.translation.search.append(urllib.quote(BBB))
+                    # NOT comes first, also add operator if there are multiple selection
+                    if (operator == 'NOT') or len(search) > 0:
+                        search.append(operator)
+                    search.append(urllib.quote(BBB))
                 else:
                     # unrecognizable value
                     self.translation.error_message.append(urllib.quote('Invalid value for {}: {}'.format(classic, value)))
+        if len(search) == 1:
+            self.translation.search.append(''.join(search))
+        elif len(search) > 1:
+            self.translation.search.append('(' + ' '.join(search) + ')')
 
     def translate_data_and(self, args):
         """ get bibliographic entries operator """

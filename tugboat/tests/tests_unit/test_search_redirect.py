@@ -286,7 +286,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('esources:*') + ' AND ' +  urllib.quote('property:("OPENACCESS")') +
+        self.assertEqual('q=(' + urllib.quote('esources:*') + ' AND ' +  urllib.quote('property:("OPENACCESS")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
     def test_classic_parameters_entry_date(self):
@@ -499,32 +499,32 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' +
-                         urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' OR ' + urllib.quote('esources:("ADS_SCAN")') +
+        self.assertEqual('q=(' +
+                         urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' OR ' + urllib.quote('esources:("ADS_SCAN")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
         req.args = MultiDict([('data_and', 'NO'), ('article', 'YES'), ('gif_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' +
-                         urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' OR ' + urllib.quote('esources:("ADS_SCAN")') +
+        self.assertEqual('q=(' +
+                         urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' OR ' + urllib.quote('esources:("ADS_SCAN")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
         req.args = MultiDict([('data_and', 'YES'), ('article', 'YES'), ('gif_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' +
-                         urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' AND ' + urllib.quote('esources:("ADS_SCAN")') +
+        self.assertEqual('q=(' +
+                         urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' AND ' + urllib.quote('esources:("ADS_SCAN")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
         req.args = MultiDict([('data_and', 'NOT'), ('article', 'YES'), ('gif_link', 'YES')])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=NOT ' +
-                         urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' NOT ' + urllib.quote('esources:("ADS_SCAN")') +
+        self.assertEqual('q=(NOT ' +
+                         urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' NOT ' + urllib.quote('esources:("ADS_SCAN")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
         req.args = MultiDict([('data_and', 'foo')])
