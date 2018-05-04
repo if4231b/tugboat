@@ -335,8 +335,7 @@ class ClassicSearchRedirectView(Resource):
             search += urllib.quote(author_field) + '('
             for author in authors:
                 if len(author) > 1:
-                    # make sure user has not specified double quotes, and then put author in double quote
-                    search += urllib.quote('"' + author.replace('"', '') + '"' + connector)
+                    search += urllib.quote(author.encode('utf8') + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final
             search += ')'
             # fields in search are ORed
@@ -357,10 +356,10 @@ class ClassicSearchRedirectView(Resource):
         # one lone parameter should hold all authors from classic
         classic_str = args.pop(classic_param, None)
         if classic_str:
-            terms = ClassicSearchRedirectView.classic_field_to_array(classic_str)
+            terms = self.classic_field_to_array(classic_str)
             search += urllib.quote(bbb_param + ':') + '('
             for term in terms:
-                search += urllib.quote(term + connector)
+                search += urllib.quote(term.encode('utf8') + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final connector
             search += ')'
             # fields in search are ORed
@@ -855,7 +854,7 @@ class ClassicSearchRedirectView(Resource):
         for i in range(0, len(values)):
             values[i] = values[i].replace('+', ' ')
             if ' ' in values[i] and (values[i].startswith('"') and values[i].endswith('"')) is False:
-                # value has space and is not already surrounded by double quotes so we add quotes
+                # always surround by double quotes if not already
                 values[i] = '"' + values[i] + '"'
         return values
 
