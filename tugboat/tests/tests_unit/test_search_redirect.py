@@ -98,14 +98,14 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         object_search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('M31') + ')' +
+        self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('"M31"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), object_search) # single object
 
         req.args = MultiDict([('object', urllib.quote('M31\r\nM32'))])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         object_search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('M31 AND M32') + ')' +
+        self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('"M31" AND "M32"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'),
                          object_search) # objects, newline separator
 
@@ -113,7 +113,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         object_search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('M31 AND M32 AND M33') + ')' +
+        self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('"M31" AND "M32" AND "M33"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'),
                          object_search) # object, semicolor separator
 
@@ -122,12 +122,12 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
-        req.args = MultiDict([('title', urllib.quote('M31'))])
+        req.args = MultiDict([('title', urllib.quote('ADS'))])
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         object_search = view.translate(req)
         self.assertEqual('q=' +
-                         urllib.quote('title:') + '(' + urllib.quote('M31') + ')' +
+                         urllib.quote('title:') + '(' + urllib.quote('"ADS"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), object_search) # single object
 
     def test_text(self):
@@ -140,7 +140,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         object_search = view.translate(req)
         self.assertEqual('q=' +
-                         urllib.quote('abs:') + '(' + urllib.quote('M31') + ')' +
+                         urllib.quote('abs:') + '(' + urllib.quote('"M31"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), object_search) # single object
 
     def test_pubdate(self):
@@ -851,7 +851,9 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibstem_facet}') +
-                         '&fq_bibstem_facet=(' + urllib.quote('bibstem_facet:("ApJ" OR " AJ" OR " AAS")') + ')' +
+                         '&fq_bibstem_facet=(' + urllib.quote('bibstem_facet:"ApJ"') + ' OR ' + \
+                                                 urllib.quote('bibstem_facet:" AJ"') + ' OR ' +  \
+                                                 urllib.quote('bibstem_facet:" AAS"') + ')' + \
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
 if __name__ == '__main__':
