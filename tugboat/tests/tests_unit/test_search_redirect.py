@@ -850,11 +850,8 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibstem_facet}') +
-                         '&fq_bibstem_facet=(' + urllib.quote('bibstem_facet:"ApJ"') + ' OR ' + \
-                                                 urllib.quote('bibstem_facet:" AJ"') + ' OR ' +  \
-                                                 urllib.quote('bibstem_facet:" AAS"') + ')' + \
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=(' + urllib.quote('bibstem:"ApJ"') + ' OR ' +  urllib.quote('bibstem:" AJ"') + ' OR ' +  \
+                                 urllib.quote('bibstem:" AAS"') + ')' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
