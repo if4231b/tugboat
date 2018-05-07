@@ -840,9 +840,9 @@ class ClassicSearchRedirectView(Resource):
             for e in entry:
                 if len(ref_stems) > 0:
                     ref_stems += ' OR '
-                ref_stems += urllib.quote('bibstem:"{}"'.format(e))
+                ref_stems += urllib.quote('"' + e + '"')
             if len(ref_stems) > 0:
-                self.translation.search.append('(' + ref_stems + ')')
+                self.translation.search.append('bibstem:(' + ref_stems + ')')
 
     @staticmethod
     def classic_field_to_array(value):
