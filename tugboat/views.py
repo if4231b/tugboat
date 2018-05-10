@@ -714,6 +714,8 @@ class ClassicSearchRedirectView(Resource):
                      'NORMCITATIONS' : 'citation_count_norm desc',
                      'NORMSCORE'     : '',
                      'NONE'          : '',
+                     'PAGE'          : 'bibcode asc',
+                     'RPAGE'         : 'bibcode desc',
         }
 
         value = args.pop('sort', None)
