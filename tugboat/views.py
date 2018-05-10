@@ -394,23 +394,23 @@ class ClassicSearchRedirectView(Resource):
         if not self.supplied(start_month):
             start_month = 1
 
-        # if end is not provided, use now
-        if not self.supplied(end_year):
-            tmp = datetime.now()
-            end_year = tmp.year
-            if not self.supplied(end_month):
-                end_month = tmp.month
-        else:
+        # if end is not provided for month, use maximum
+        # if end is not provided for year, use *
+        if self.supplied(end_year):
             if not self.supplied(end_month):
                 end_month = 12
 
         start_year = int(start_year)
         start_month = int(start_month)
-        end_year = int(end_year)
-        end_month = int(end_month)
+        if self.supplied(end_year):
+            end_year = int(end_year)
+            end_month = int(end_month)
         # Y10k problem, but for 2 digit years we want to be clear what years we are searching
-        search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO {:04d}-{:02}]'.format(start_year, start_month,
-                                                                                    end_year, end_month))
+        if self.supplied(end_year):
+            search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO {:04d}-{:02}]'.format(start_year, start_month,
+                                                                                        end_year, end_month))
+        else:
+            search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO *]'.format(start_year, start_month))
         self.translation.search.append(search)
 
     def translate_entry_date(self, args):
@@ -437,15 +437,9 @@ class ClassicSearchRedirectView(Resource):
         if not self.supplied(start_day):
             start_day = 1
 
-        # if end is not provided, use now
-        if not self.supplied(end_year):
-            tmp = datetime.now()
-            end_year = tmp.year
-            if not self.supplied(end_month):
-                end_month = tmp.month
-            if not self.supplied(end_day):
-                end_day = tmp.day
-        else:
+        # if end is not provided for day and month, use the maximum
+        # if end is not provided for year, use *
+        if self.supplied(end_year):
             if not self.supplied(end_month):
                 end_month = 12
             if not self.supplied(end_day):
@@ -455,12 +449,17 @@ class ClassicSearchRedirectView(Resource):
         start_year = int(start_year)
         start_month = int(start_month)
         start_day = int(start_day)
-        end_year = int(end_year)
-        end_month = int(end_month)
-        end_day = int(end_day)
-        search = 'entry_date' + \
-            urllib.quote(':[{:04d}-{:02d}-{:02d} TO {:04d}-{:02}-{:02d}]'.format(start_year, start_month, start_day,
-                                                                                 end_year, end_month, end_day))
+        if self.supplied(end_year):
+            end_year = int(end_year)
+            end_month = int(end_month)
+            end_day = int(end_day)
+
+        if self.supplied(end_year):
+            search = 'entry_date' + \
+                urllib.quote(':[{:04d}-{:02d}-{:02d} TO {:04d}-{:02}-{:02d}]'.format(start_year, start_month, start_day,
+                                                                                     end_year, end_month, end_day))
+        else:
+            search = 'entry_date' + urllib.quote(':[{:04d}-{:02d}-{:02d} TO *]'.format(start_year, start_month, start_day))
         self.translation.search.append(search)
 
     def validate_db_key(self, db_key):

@@ -183,7 +183,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         n = datetime.now()
-        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO {:04d}-{:02d}]'.format(n.year, n.month)) +
+        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO *]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no end
 
         req.args = MultiDict([('end_year', 1991), ('end_mon', 10)])
@@ -333,8 +333,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_default_weights())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        n = datetime.now()
-        self.assertEqual('q=' + urllib.quote('entry_date:[1990-05-01 TO {:04d}-{:02d}-{:02d}]'.format(n.year, n.month, n.day)) +
+        self.assertEqual('q=' + urllib.quote('entry_date:[1990-05-01 TO *]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no end
         req.args = MultiDict([('end_entry_year', 1991), ('end_entry_mon', 10)])
         req.args.update(self.append_default_weights())
