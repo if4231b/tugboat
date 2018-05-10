@@ -61,6 +61,7 @@ class TranslationValue():
         self.filter= []
         self.error_message = []
         self.warning_message = []
+        self.unprocessed_fields = []
         self.sort = ''
 
 class ClassicSearchRedirectView(Resource):
@@ -275,6 +276,8 @@ class ClassicSearchRedirectView(Resource):
             solr_query += '&error_message=' + '&error_message='.join(self.translation.error_message)
         if len(self.translation.warning_message):
             solr_query += '&warning_message=' + '&warning_message='.join(self.translation.warning_message)
+        if len(self.translation.unprocessed_fields) :
+            solr_query += '&unprocessed_parameter=' + '&unprocessed_parameter='.join(self.translation.unprocessed_fields)
         if len(args.keys()):
             # the functions that translate individual parameters use pop to remove parameters from arg list
             # here if there are unprocessed parameters
@@ -362,9 +365,9 @@ class ClassicSearchRedirectView(Resource):
                 search += urllib.quote(term.encode('utf8') + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final connector
             search += ')'
-            # fields in search are ORed
+            # fields in search are ANDed as of 5/9
             if len(self.translation.search) > 0:
-                self.translation.search.append('OR')
+                self.translation.search.append('AND')
             self.translation.search.append(search)
 
     def translate_pubdate(self, args):
@@ -696,19 +699,21 @@ class ClassicSearchRedirectView(Resource):
 
     def translate_sort(self, args):
         """ translate sort parameter """
-        dict_sort = {'SCORE'      : 'date desc, bibcode desc',
-                     'AUTHOR'     : 'first_author desc',
-                     'NDATE'      : 'date desc',
-                     'ODATE'      : 'date asc',
-                     'BIBCODE'    : 'bibcode desc',
-                     'RBIBCODE'   : 'bibcode asc',
-                     'ENTRY'      : 'entry_date desc',
-                     'CITATIONS'  : 'citation_count desc',
-                     'AUTHOR_CNT' : 'author_count desc',
-                     'SBIBCODE'   : 'bibcode desc',
-                     'READS'      : 'read_count desc',
-                     'AR_SCORE'   : 'read_count desc',
-                     'NONE'       : '',
+        dict_sort = {'SCORE'         : 'date desc, bibcode desc',
+                     'AUTHOR'        : 'first_author desc',
+                     'NDATE'         : 'date desc',
+                     'ODATE'         : 'date asc',
+                     'BIBCODE'       : 'bibcode desc',
+                     'RBIBCODE'      : 'bibcode asc',
+                     'ENTRY'         : 'entry_date desc',
+                     'CITATIONS'     : 'citation_count desc',
+                     'AUTHOR_CNT'    : 'author_count desc',
+                     'SBIBCODE'      : 'bibcode desc',
+                     'READS'         : 'read_count desc',
+                     'AR_SCORE'      : 'read_count desc',
+                     'NORMCITATIONS' : 'citation_count_norm desc',
+                     'NORMSCORE'     : '',
+                     'NONE'          : '',
         }
 
         value = args.pop('sort', None)
@@ -725,50 +730,92 @@ class ClassicSearchRedirectView(Resource):
         self.translation.error_message.append(urllib.quote('Invalid value for sort: {}'.format(value)))
 
     def translate_to_ignore(self, args):
-        """ remove the fields that is being ignored """
-        classic_ignored_fields = ['sim_query', 'ned_query', 'lpi_query', 'iau_query', 'min_score', 'mail_link', 'gpndb_obj',
-                                  'data_type', # From Alberto 3/12 regarding data_type: we'll want it available for API queries, so it's for later
-                                  'adsobj_query',
-                                 ]
-        for field in classic_ignored_fields:
-            args.pop(field, None)
+        """ remove the fields that is being ignored in some cases an unprocessed message is issued """
+        classic_ignored_fields = {'sim_query'    : 'All object queries include SIMBAD and NED search results.',
+                                  'ned_query'    : 'All object queries include SIMBAD and NED search results.',
+                                  'min_score'    : 'Please note Min Score is deprecated.',
+                                  'mail_link'    : 'Please note Mail Order Links is deprecated.',
+                                  # From Alberto 3/12 regarding data_type: we'll want it available for API queries, so it's for later
+                                  'data_type'    : 'Selected data format was ignored please select export function here.',
+                                  'lpi_query'    : '',
+                                  'iau_query'    : '',
+                                  'gpndb_obj'    : '',
+                                  'adsobj_query' : '',
+                                  'aff_logic'    : '',
+                                  'aff_req'      : '',
+                                  'aff_sco'      : '',
+                                  'aff_syn'      : '',
+                                  'aff_wgt'      : '',
+                                  'aff_wt'       : '',
+                                  'kwd_logic'    : '',
+                                  'kwd_req'      : '',
+                                  'kwd_sco'      : '',
+                                  'kwd_wgt'      : '',
+                                  'kwd_wt'       : '',
+                                  'full_logic'   : '',
+                                  'full_req'     : '',
+                                  'full_sco'     : '',
+                                  'full_syn'     : '',
+                                  'full_wgt'     : '',
+                                  'full_wt'      : '',
+
+        }
+        for key,value in classic_ignored_fields.iteritems():
+            if key in args:
+                args.pop(key, None)
+                if len(value) and value not in self.translation.unprocessed_fields:
+                    self.translation.unprocessed_fields.append(value)
 
     def translate_weights(self, args):
         """ check the weight parameters """
-        # these weights are checked/present as default, if they are not present add them in,
-        # for ***_wt if the values have been changed, keep them in the args to be
-        # reported in the unprocessed parameters to BBB otherwise
-        # if they have stayed unchanged from default then remove them from args
-        dict_weights_default_present = {'aut_syn'  :  'YES',
-                                        'ttl_syn'  :  'YES',
-                                        'txt_syn'  :  'YES',
-                                        'aut_wt'   :  '1.0',
-                                        'obj_wt'   :  '1.0',
-                                        'ttl_wt'   :  '0.3',
-                                        'txt_wt'   :  '3.0',
-                                        'aut_wgt'  :  'YES',
-                                        'obj_wgt'  :  'YES',
-                                        'ttl_wgt'  :  'YES',
-                                        'txt_wgt'  :  'YES',
-                                        'ttl_sco'  :  'YES',
-                                        'txt_sco'  :  'YES',
+        # these weights are need to be in default settings
+        # if they have been modified by the user, issue an unprocessed message
+        dict_weights_default = {'aut_syn'  :  'YES',
+                                'ttl_syn'  :  'YES',
+                                'txt_syn'  :  'YES',
+                                'aut_wt'   :  '1.0',
+                                'obj_wt'   :  '1.0',
+                                'ttl_wt'   :  '0.3',
+                                'txt_wt'   :  '3.0',
+                                'aut_wgt'  :  'YES',
+                                'obj_wgt'  :  'YES',
+                                'ttl_wgt'  :  'YES',
+                                'txt_wgt'  :  'YES',
+                                'ttl_sco'  :  'YES',
+                                'txt_sco'  :  'YES',
+                                'aut_sco'  :  'NO',
+                                'aut_req'  :  'NO',
+                                'obj_req'  :  'NO',
+                                'ttl_req'  :  'NO',
+                                'txt_req'  :  'NO',
         }
-        # for completeness the default absented weights are listed here,
-        # basically, nothing needs to get done for absented weights, if they
-        # have been selected (not default) leave them in the args
-        # if they have stayed unchanged from default, they do not appear in args
-        dict_weights_default_absent = {'aut_sco'  :  'YES',
-                                       'aut_req'  :  'YES',
-                                       'obj_req'  :  'YES',
-                                       'ttl_req'  :  'YES',
-                                       'txt_req'  :  'YES',
+        dict_weights_of_type = {'syn' : 'Synonym Replacement',
+                                'wt'  : 'Relative Weights',
+                                'wgt' : 'Use For Weighting',
+                                'sco' : 'Weighted Scoring',
+                                'req' : 'Require Field for Selection',
+
         }
-        for key,value in dict_weights_default_present.iteritems():
+        not_default = []
+        for key,value in dict_weights_default.iteritems():
             if key in args:
-                if args[key] == value:
-                    args.pop(key, None)
+                set_value = args.pop(key, None)
+                # if differs from default added to the list
+                if set_value != value:
+                    type = key.split('_')[1]
+                    if dict_weights_of_type[type] not in not_default:
+                        not_default.append(dict_weights_of_type[type])
+            # if not in args it means it was not selected, compare to see if default is YES
+            # if so added it in
             else:
-                args[key] = ''
+                if 'NO' != value:
+                    type = key.split('_')[1]
+                    if dict_weights_of_type[type] not in not_default:
+                        not_default.append(dict_weights_of_type[type])
+        if len(not_default) > 0:
+            self.translation.unprocessed_fields.append('The following search settings have been ignored '
+                                                       'by the query translator: {}.'.format(', '.join(not_default)))
+
 
     def validate_arxiv_sel(self, arxiv_sel):
         """Validate arXiv selections"""

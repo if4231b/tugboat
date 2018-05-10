@@ -455,19 +455,19 @@ class TestSearchParametersTranslation(TestCase):
         """
         req = Request('get', 'http://test.test?')
         req.prepare()
-        req.args = MultiDict([('aff_logic', 'foo')])
+        req.args = MultiDict([('aut_syn', 'foo')])
         req.mimetype = None
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertTrue('unprocessed_parameter' in search)
-        self.assertTrue('aff_logic' in search)
+        self.assertTrue('Synonym Replacement' in search)
 
-        req.args = MultiDict([('aff_logic', 'foo'), ('full_logic', 'bar')])
+        req.args = MultiDict([('aut_syn', 'foo'), ('aut_wt', 'bar')])
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertTrue('unprocessed_parameter' in search)
-        self.assertTrue('aff_logic' in search)
-        self.assertTrue('full_logic' in search)
+        self.assertTrue('Synonym Replacement' in search)
+        self.assertTrue('Relative Weights' in search)
 
     def test_qsearch(self):
         """qsearch searches metadata
