@@ -372,7 +372,6 @@ class ClassicSearchRedirectView(Resource):
 
     def translate_pubdate(self, args):
         """translate string with pubdate element
-
         for pubdate date search, only start or end need be specified
         at least one start year or end year must be provided
         unlike entry date search, negative offsets are not supported
@@ -394,30 +393,36 @@ class ClassicSearchRedirectView(Resource):
         if not self.supplied(start_month):
             start_month = 1
 
-        # if end is not provided for month, use maximum
-        # if end is not provided for year, use *
-        if self.supplied(end_year):
+        # if end is not provided, use end of time
+        if not self.supplied(end_year):
+            end_year = 2222
+            tmp = datetime.now()
+            if not self.supplied(end_month):
+                end_month = tmp.month
+        else:
             if not self.supplied(end_month):
                 end_month = 12
 
         start_year = int(start_year)
         start_month = int(start_month)
-        if self.supplied(end_year):
-            end_year = int(end_year)
-            end_month = int(end_month)
+        end_year = int(end_year)
+        end_month = int(end_month)
+        # we can use * for solr query if either start_year or end_year are not set
+        # did not change the code above that actually set the values if either is missing
         # Y10k problem, but for 2 digit years we want to be clear what years we are searching
-        if self.supplied(end_year):
+        if start_year == 0:
+            search = 'pubdate' + urllib.quote(':[* TO {:04d}-{:02}]'.format(end_year, end_month))
+        elif end_year == 2222:
+            search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO *]'.format(start_year, start_month))
+        else:
             search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO {:04d}-{:02}]'.format(start_year, start_month,
                                                                                         end_year, end_month))
-        else:
-            search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO *]'.format(start_year, start_month))
         self.translation.search.append(search)
 
     def translate_entry_date(self, args):
         """ return string for pubdate element
-
         like pubdate search, only start on end need be specified
-        bumblebee does not yet implement, assume to follow pubdate 
+        bumblebee does not yet implement, assume to follow pubdate
         """
         start_year = args.pop('start_entry_year', None)
         end_year = args.pop('end_entry_year', None)
@@ -437,29 +442,38 @@ class ClassicSearchRedirectView(Resource):
         if not self.supplied(start_day):
             start_day = 1
 
-        # if end is not provided for day and month, use the maximum
-        # if end is not provided for year, use *
-        if self.supplied(end_year):
+        # if end is not provided, use end of time
+        if not self.supplied(end_year):
+            end_year = 2222
+            tmp = datetime.now()
+            if not self.supplied(end_month):
+                end_month = tmp.month
+            if not self.supplied(end_day):
+                end_day = tmp.day
+        else:
             if not self.supplied(end_month):
                 end_month = 12
             if not self.supplied(end_day):
                 # get last day of end month/year
-                end_day = calendar.monthrange(end_year, end_month)[1]
+                end_day = calendar.monthrange(int(end_year), int(end_month))[1]
 
         start_year = int(start_year)
         start_month = int(start_month)
         start_day = int(start_day)
-        if self.supplied(end_year):
-            end_year = int(end_year)
-            end_month = int(end_month)
-            end_day = int(end_day)
-
-        if self.supplied(end_year):
-            search = 'entry_date' + \
-                urllib.quote(':[{:04d}-{:02d}-{:02d} TO {:04d}-{:02}-{:02d}]'.format(start_year, start_month, start_day,
-                                                                                     end_year, end_month, end_day))
+        end_year = int(end_year)
+        end_month = int(end_month)
+        end_day = int(end_day)
+        # we can use * for solr query if either start_year or end_year are not set
+        # did not change the code above that actually set the values if either is missing
+        if start_year == 0:
+            search = 'entry_date' + urllib.quote(':[* TO "{:04d}-{:02}-{:02d}T00:00:00.000Z"]'.format(
+                                                            end_year, end_month, end_day))
+        elif end_year == 2222:
+            search = 'entry_date' + urllib.quote(':["{:04d}-{:02d}-{:02d}T00:00:00.000Z" TO *]'.format(
+                                                      start_year, start_month, start_day))
         else:
-            search = 'entry_date' + urllib.quote(':[{:04d}-{:02d}-{:02d} TO *]'.format(start_year, start_month, start_day))
+            search = 'entry_date' + urllib.quote(':["{:04d}-{:02d}-{:02d}T00:00:00.000Z" TO "{:04d}-{:02}-{:02d}T00:00:00.000Z"]'.format(
+                                                    start_year, start_month, start_day, end_year, end_month, end_day))
         self.translation.search.append(search)
 
     def validate_db_key(self, db_key):
@@ -763,7 +777,16 @@ class ClassicSearchRedirectView(Resource):
         }
         for key,value in classic_ignored_fields.iteritems():
             if key in args:
-                args.pop(key, None)
+                set_value = args.pop(key, None)
+                # only produce a message if an object search is defined.
+                if (key == 'sim_query' or key == 'ned_query') and len(args['object']) == 0:
+                    continue
+                # only produce a message if a value is set for min_score
+                if key == 'min_score' and len(set_value) == 0:
+                    continue
+                # only produce a message if other than default
+                if key == 'data_type' and set_value == 'SHORT':
+                    continue
                 if len(value) and value not in self.translation.unprocessed_fields:
                     self.translation.unprocessed_fields.append(value)
 
