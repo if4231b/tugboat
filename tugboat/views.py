@@ -341,9 +341,9 @@ class ClassicSearchRedirectView(Resource):
                     search += urllib.quote(author.encode('utf8') + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final
             search += ')'
-            # fields in search are ORed
+            # fields in search are ANDed as of 5/9
             if len(self.translation.search) > 0:
-                self.translation.search.append('OR')
+                self.translation.search.append('AND')
             self.translation.search.append(search)
 
     def translate_simple(self, args, classic_param, bbb_param):
@@ -417,6 +417,9 @@ class ClassicSearchRedirectView(Resource):
         else:
             search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO {:04d}-{:02}]'.format(start_year, start_month,
                                                                                         end_year, end_month))
+        # fields in search are ANDed as of 5/9
+        if len(self.translation.search) > 0:
+            self.translation.search.append('AND')
         self.translation.search.append(search)
 
     def translate_entry_date(self, args):
@@ -466,7 +469,7 @@ class ClassicSearchRedirectView(Resource):
         # we can use * for solr query if either start_year or end_year are not set
         # did not change the code above that actually set the values if either is missing
         if start_year == 0:
-            search = 'entry_date' + urllib.quote(':[* TO "{:04d}-{:02}-{:02d}T00:00:00.000Z"]'.format(
+            search = 'entry_date' + urllib.quote(':["0000-00-00T00:00:00.000Z" TO "{:04d}-{:02}-{:02d}T00:00:00.000Z"]'.format(
                                                             end_year, end_month, end_day))
         elif end_year == 2222:
             search = 'entry_date' + urllib.quote(':["{:04d}-{:02d}-{:02d}T00:00:00.000Z" TO *]'.format(
@@ -474,6 +477,9 @@ class ClassicSearchRedirectView(Resource):
         else:
             search = 'entry_date' + urllib.quote(':["{:04d}-{:02d}-{:02d}T00:00:00.000Z" TO "{:04d}-{:02}-{:02d}T00:00:00.000Z"]'.format(
                                                     start_year, start_month, start_day, end_year, end_month, end_day))
+        # fields in search are ANDed as of 5/9
+        if len(self.translation.search) > 0:
+            self.translation.search.append('AND')
         self.translation.search.append(search)
 
     def validate_db_key(self, db_key):
@@ -776,19 +782,30 @@ class ClassicSearchRedirectView(Resource):
 
         }
         for key,value in classic_ignored_fields.iteritems():
-            if key in args:
-                set_value = args.pop(key, None)
-                # only produce a message if an object search is defined.
-                if (key == 'sim_query' or key == 'ned_query') and len(args['object']) == 0:
+            set_value = args.pop(key, None)
+            if (key == 'sim_query' or key == 'ned_query'):
+                # if it is checked, do nothing
+                if (set_value is not None):
                     continue
-                # only produce a message if a value is set for min_score
-                if key == 'min_score' and len(set_value) == 0:
+                # if no object search is entered, do nothing
+                # note that this function is called before function that analyzes object
+                # hence object should still be in args
+                if ('object' in args.keys() and len(args['object']) == 0):
                     continue
-                # only produce a message if other than default
-                if key == 'data_type' and set_value == 'SHORT':
-                    continue
-                if len(value) and value not in self.translation.unprocessed_fields:
-                    self.translation.unprocessed_fields.append(value)
+                # go down to display a message if either of queries is unchecked
+                # and an object search is defined
+            # only produce a message if a value is set for min_score
+            if key == 'min_score' and set_value == '':
+                continue
+            if key == 'mail_link' and set_value == None:
+                continue
+            # only produce a message if other than default
+            if key == 'data_type' and set_value == 'SHORT':
+                continue
+            # if set_value == None:
+            #     continue
+            if len(value) and value not in self.translation.unprocessed_fields:
+                self.translation.unprocessed_fields.append(value)
 
     def translate_weights(self, args):
         """ check the weight parameters """
