@@ -244,15 +244,14 @@ class ClassicSearchRedirectView(Resource):
         args = self.parse(request)
         # functions to translate/process specific parameters
         # consider using reflection to obtain this list
-        funcs = [self.translate_authors, self.translate_pubdate,
-                 self.translate_entry_date, self.translate_results_subset,
-                 self.translate_return_req, self.translate_article_sel,
-                 self.translate_qsearch, self.translate_database,
-                 self.translate_jou_pick, self.translate_group_sel,
-                 self.translate_sort, self.translate_to_ignore,
-                 self.translate_weights, self.translate_arxiv_sel,
-                 self.translate_ref_stems,
-                 ]
+        funcs = [self.translate_authors,
+                 self.translate_pubdate, self.translate_entry_date,
+                 self.translate_results_subset, self.translate_return_req,
+                 self.translate_article_sel, self.translate_qsearch,
+                 self.translate_database, self.translate_jou_pick,
+                 self.translate_group_sel, self.translate_sort,
+                 self.translate_to_ignore, self.translate_weights,
+                 self.translate_arxiv_sel, self.translate_ref_stems]
         for f in funcs:
             f(args)  # each may contribute to self.translation singleton
 
@@ -337,8 +336,7 @@ class ClassicSearchRedirectView(Resource):
             authors = self.classic_field_to_array(authors_str)
             search += urllib.quote(author_field) + '('
             for author in authors:
-                if len(author) > 1:
-                    search += urllib.quote(author.encode('utf8') + connector)
+                search += urllib.quote(author + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final
             search += ')'
             # fields in search are ANDed as of 5/9
@@ -362,7 +360,7 @@ class ClassicSearchRedirectView(Resource):
             terms = self.classic_field_to_array(classic_str)
             search += urllib.quote(bbb_param + ':') + '('
             for term in terms:
-                search += urllib.quote(term.encode('utf8') + connector)
+                search += urllib.quote(term + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final connector
             search += ')'
             # fields in search are ANDed as of 5/9
@@ -934,18 +932,30 @@ class ClassicSearchRedirectView(Resource):
 
     @staticmethod
     def classic_field_to_array(value):
-        """ convert authors or objects from classic to list"""
+        """ convert authors/objects/title/abstract search words from classic to list"""
         value = urllib.unquote(value)
         value = value.replace('\r\n', ';')
         values = value.split(';')
         for i in range(0, len(values)):
-            values[i] = values[i].replace('+', ' ')
-            if (values[i].startswith('"') and values[i].endswith('"')) is False:
-                # always surround by double quotes if not already
-                values[i] = '"' + values[i] + '"'
+            negate = False
+            # remove any whitespace before +/- if any
+            values[i] = re.sub(r"^\s+", "", values[i], flags=re.UNICODE)
+            # now remove +/- if any, note the -
+            values[i] = values[i].replace('+', '')
+            if values[i].startswith('-'):
+                values[i] = values[i].replace('-', '')
+                negate = True
+            # remove any whitespace before/after the words
+            values[i] = re.sub("^\s+|\s+$", "", values[i], flags=re.UNICODE)
+            # if not an empty string and if not quoted, then quoted
+            if len(values[i]) > 0:
+                values[i] = values[i].encode('utf8')
+                if (values[i].startswith('"') and values[i].endswith('"')) is False:
+                    # always surround by double quotes if not already
+                    values[i] = ('-' if negate else '') + '"' + values[i] + '"'
+        # remove any empty strings
+        values = filter(None, values)
         return values
-
-
     
     
 class BumblebeeView(Resource):

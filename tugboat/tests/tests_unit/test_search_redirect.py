@@ -42,7 +42,7 @@ class TestSearchParametersTranslation(TestCase):
         empty_search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), empty_search, 'author test')  # no authors
 
-        req.args = MultiDict([('author', urllib.quote('Huchra,+John'))])
+        req.args = MultiDict([('author', urllib.quote('+Huchra, John'))])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
@@ -55,7 +55,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra, John"') + ')' +
+        self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra,John"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'),
                          author_search) # single author with quotes
 
@@ -67,15 +67,15 @@ class TestSearchParametersTranslation(TestCase):
                          '&sort=' + urllib.quote('date desc, bibcode desc'),
                          author_search) # authors, newline separator
 
-        req.args = MultiDict([('author', urllib.quote('Huchra,+John;Macri,+Lucas+M.'))])
+        req.args = MultiDict([('author', urllib.quote('+Huchra, John;-Macri, Lucas M.'))])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra, John" AND "Macri, Lucas M."') + ')' +
+        self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra, John" AND -"Macri, Lucas M."') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'),
                          author_search) # authors, semicolon separator
 
-        req.args = MultiDict([('author', urllib.quote('Huchra,+John')), ('aut_xct', 'YES')])
+        req.args = MultiDict([('author', urllib.quote('Huchra, John')), ('aut_xct', 'YES')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
@@ -83,7 +83,7 @@ class TestSearchParametersTranslation(TestCase):
                          '&sort=' + urllib.quote('date desc, bibcode desc'),
                          author_search) # author with exact match
 
-        req.args = MultiDict([('author', urllib.quote('Huchra,+John;Macri,+Lucas+M.')), ('aut_logic', 'OR')])
+        req.args = MultiDict([('author', urllib.quote('Huchra, John;Macri, Lucas M.')), ('aut_logic', 'OR')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
