@@ -360,7 +360,7 @@ class ClassicSearchRedirectView(Resource):
             terms = self.classic_field_to_array(classic_str)
             search += urllib.quote(bbb_param + ':') + '('
             for term in terms:
-                search += urllib.quote(term.encode('utf8') + connector)
+                search += urllib.quote(term + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final connector
             search += ')'
             # fields in search are ANDed as of 5/9
@@ -949,6 +949,7 @@ class ClassicSearchRedirectView(Resource):
             values[i] = re.sub("^\s+|\s+$", "", values[i], flags=re.UNICODE)
             # if not an empty string and if not quoted, then quoted
             if len(values[i]) > 0:
+                values[i] = values[i].encode('utf8')
                 if (values[i].startswith('"') and values[i].endswith('"')) is False:
                     # always surround by double quotes if not already
                     values[i] = ('-' if negate else '') + '"' + values[i] + '"'
