@@ -977,11 +977,12 @@ class ClassicSearchRedirectView(Resource):
                 negate = True
             # remove any whitespace before/after the words
             values[i] = re.sub("^\s+|\s+$", "", values[i], flags=re.UNICODE)
-            # if not an empty string and if not quoted, then quoted
+            # if not an empty string
             if len(values[i]) > 0:
                 values[i] = values[i].encode('utf8')
         # remove any empty strings
         values = filter(None, values)
+        # concatenate and return in a list with one element
         return [' '.join(values)]
 
 class BumblebeeView(Resource):
