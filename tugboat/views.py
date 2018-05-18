@@ -357,7 +357,10 @@ class ClassicSearchRedirectView(Resource):
         # one lone parameter should hold all authors from classic
         classic_str = args.pop(classic_param, None)
         if classic_str:
-            terms = self.classic_field_to_array(classic_str)
+            if classic_param == 'object':
+                terms = self.classic_field_to_array(classic_str)
+            else:
+                terms = self.classic_field_to_string(classic_str)
             search += urllib.quote(bbb_param + ':') + '('
             for term in terms:
                 search += urllib.quote(term + connector)
@@ -957,7 +960,31 @@ class ClassicSearchRedirectView(Resource):
         values = filter(None, values)
         return values
     
-    
+    @staticmethod
+    def classic_field_to_string(value):
+        """ convert authors/objects/title/abstract search words from classic to list"""
+        value = urllib.unquote(value)
+        value = value.replace('\r\n', ';')
+        values = value.split(';')
+        for i in range(0, len(values)):
+            negate = False
+            # remove any whitespace before +/- if any
+            values[i] = re.sub(r"^\s+", "", values[i], flags=re.UNICODE)
+            # now remove +/- if any, note the -
+            values[i] = values[i].replace('+', '')
+            if values[i].startswith('-'):
+                values[i] = values[i].replace('-', '')
+                negate = True
+            # remove any whitespace before/after the words
+            values[i] = re.sub("^\s+|\s+$", "", values[i], flags=re.UNICODE)
+            # if not an empty string
+            if len(values[i]) > 0:
+                values[i] = values[i].encode('utf8')
+        # remove any empty strings
+        values = filter(None, values)
+        # concatenate and return in a list with one element
+        return [' '.join(values)]
+
 class BumblebeeView(Resource):
     """
     End point that is used to forward a search result page from ADS Classic
