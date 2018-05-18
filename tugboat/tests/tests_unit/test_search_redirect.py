@@ -130,7 +130,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         object_search = view.translate(req)
         self.assertEqual('q=' +
-                         urllib.quote('title:') + '(' + urllib.quote('"ADS"') + ')' +
+                         urllib.quote('title:') + '(' + urllib.quote('ADS') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), object_search) # single object
 
     def test_text(self):
@@ -143,7 +143,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         object_search = view.translate(req)
         self.assertEqual('q=' +
-                         urllib.quote('abs:') + '(' + urllib.quote('"M31"') + ')' +
+                         urllib.quote('abs:') + '(' + urllib.quote('M31') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc'), object_search) # single object
 
     def test_pubdate(self):
