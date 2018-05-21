@@ -325,8 +325,9 @@ class ClassicSearchRedirectView(Resource):
         search = ''
         logic = self.get_logic('author', args)
         exact = self.author_exact(args)
-        if logic == 'OR':
-            connector = ' OR '
+        # 5/21 from Alberto: let's switch the author "OR" to an "AND" by default and issue a warning to the user.
+        # if logic == 'OR':
+        #     connector = ' OR '
         author_field = 'author:'
         if exact:
             author_field = '=author:'
@@ -339,10 +340,12 @@ class ClassicSearchRedirectView(Resource):
                 search += urllib.quote(author + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final
             search += ')'
-            # fields in search are ANDed as of 5/9
+            # fields in search are ANDed as of 5/9 and issue a warning
             if len(self.translation.search) > 0:
                 self.translation.search.append('AND')
             self.translation.search.append(search)
+            if len(authors) > 1 and logic == 'OR':
+                self.translation.warning_message.append(urllib.quote('author search terms combined with AND rather than OR'))
 
     def translate_simple(self, args, classic_param, bbb_param):
         """process easy to translate fields like title
@@ -470,13 +473,13 @@ class ClassicSearchRedirectView(Resource):
         # we can use * for solr query if either start_year or end_year are not set
         # did not change the code above that actually set the values if either is missing
         if start_year == 0:
-            search = 'entry_date' + urllib.quote(':["0000-00-00T00:00:00.000Z" TO "{:04d}-{:02}-{:02d}T00:00:00.000Z"]'.format(
+            search = 'entdate' + urllib.quote(':[* TO "{:04d}-{:02}-{:02d}"]'.format(
                                                             end_year, end_month, end_day))
         elif end_year == 2222:
-            search = 'entry_date' + urllib.quote(':["{:04d}-{:02d}-{:02d}T00:00:00.000Z" TO *]'.format(
+            search = 'entdate' + urllib.quote(':["{:04d}-{:02d}-{:02d}" TO *]'.format(
                                                       start_year, start_month, start_day))
         else:
-            search = 'entry_date' + urllib.quote(':["{:04d}-{:02d}-{:02d}T00:00:00.000Z" TO "{:04d}-{:02}-{:02d}T00:00:00.000Z"]'.format(
+            search = 'entdate' + urllib.quote(':["{:04d}-{:02d}-{:02d}" TO "{:04d}-{:02}-{:02d}"]'.format(
                                                     start_year, start_month, start_day, end_year, end_month, end_day))
         # fields in search are ANDed as of 5/9
         if len(self.translation.search) > 0:
