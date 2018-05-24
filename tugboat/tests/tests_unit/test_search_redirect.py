@@ -40,7 +40,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         empty_search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), empty_search, 'author test')  # no authors
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', empty_search, 'author test')  # no authors
 
         req.args = MultiDict([('author', urllib.quote('+Huchra, John'))])
         req.args.update(self.append_defaults())
@@ -48,7 +48,7 @@ class TestSearchParametersTranslation(TestCase):
         author_search = view.translate(req)
         # parentheses are not urlencoded
         self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra, John"') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          author_search) # single author no quotes
 
         req.args = MultiDict([('author', urllib.quote('"Huchra,+John"'))])
@@ -56,7 +56,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra,John"') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          author_search) # single author with quotes
 
         req.args = MultiDict([('author', urllib.quote('Huchra, John\r\nMacri, Lucas M.'))])
@@ -64,7 +64,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra, John" AND "Macri, Lucas M."') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          author_search) # authors, newline separator
 
         req.args = MultiDict([('author', urllib.quote('+Huchra, John;-Macri, Lucas M.'))])
@@ -72,7 +72,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra, John" AND -"Macri, Lucas M."') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          author_search) # authors, semicolon separator
 
         req.args = MultiDict([('author', urllib.quote('Huchra, John')), ('aut_xct', 'YES')])
@@ -80,7 +80,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('=author:') + '(' + urllib.quote('"Huchra, John"') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          author_search) # author with exact match
 
         # changing OR to AND and issuing a warning
@@ -90,7 +90,7 @@ class TestSearchParametersTranslation(TestCase):
         author_search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra, John" AND "Macri, Lucas M."') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&warning_message=' + urllib.quote('author search terms combined with AND rather than OR'),
+                         '&warning_message=' + urllib.quote('author search terms combined with AND rather than OR') + '/',
                          author_search) # authors with or
 
     def test_object(self):
@@ -104,14 +104,14 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         object_search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('"M31"') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), object_search) # single object
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', object_search) # single object
 
         req.args = MultiDict([('object', urllib.quote('M31\r\nM32'))])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         object_search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('"M31" AND "M32"') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          object_search) # objects, newline separator
 
         req.args = MultiDict([('object', urllib.quote('M31;M32;M33'))])
@@ -119,7 +119,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         object_search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('"M31" AND "M32" AND "M33"') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          object_search) # object, semicolor separator
 
     def test_title(self):
@@ -133,7 +133,7 @@ class TestSearchParametersTranslation(TestCase):
         object_search = view.translate(req)
         self.assertEqual('q=' +
                          urllib.quote('title:') + '(' + urllib.quote('ADS') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), object_search) # single object
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', object_search) # single object
 
     def test_text(self):
         """text search"""
@@ -146,7 +146,7 @@ class TestSearchParametersTranslation(TestCase):
         object_search = view.translate(req)
         self.assertEqual('q=' +
                          urllib.quote('abs:') + '(' + urllib.quote('M31') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), object_search) # single object
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', object_search) # single object
 
     def test_pubdate(self):
         """test pubdate"""
@@ -157,31 +157,31 @@ class TestSearchParametersTranslation(TestCase):
         req.mimetype = None
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # no pub date
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # no pub date
 
         req.args = MultiDict([('start_year', 1990), ('end_year', 1991)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('pubdate:[1990-01 TO 1991-12]') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # both years only
+        self.assertEqual('q=' + urllib.quote('pubdate:[1990-01 TO 1991-12]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # both years only
 
         req.args = MultiDict([('start_year', 1990), ('start_mon', 5), ('end_year', 1991), ('end_mon', 10)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO 1991-10]') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # years and months
+        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO 1991-10]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # years and months
 
         req.args = MultiDict([('start_year', 1990), ('end_year', 1991), ('end_mon', 10)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('pubdate:[1990-01 TO 1991-10]') + '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no start mon
+        self.assertEqual('q=' + urllib.quote('pubdate:[1990-01 TO 1991-10]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no start mon
 
         req.args = MultiDict([('start_year', 1990), ('start_mon', 5), ('end_year', 1991)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO 1991-12]') + '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no end mon
+        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO 1991-12]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no end mon
 
         req.args = MultiDict([('start_year', 1990), ('start_mon', 5)])
         req.args.update(self.append_defaults())
@@ -189,13 +189,13 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         n = datetime.now()
         self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO *]') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no end
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no end
 
         req.args = MultiDict([('end_year', 1991), ('end_mon', 10)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('pubdate:[* TO 1991-10]') + '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no start
+        self.assertEqual('q=' + urllib.quote('pubdate:[* TO 1991-10]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no start
 
     def test_database(self):
         """database can be astronomy or physics
@@ -212,7 +212,7 @@ class TestSearchParametersTranslation(TestCase):
         # the search query should be 'q=*:*&fq={!type=aqp v=$fq_database}&fq_database=(database:"astronomy")'
         # but with only some of the special characters html encoded
         self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          search)  # astronomy only
 
         req.args = MultiDict([('db_key', 'PHY')])
@@ -220,7 +220,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22physics%22)' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'),
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          search) # physics only
 
         req.args = MultiDict([('db_key', 'GEN')])
@@ -228,7 +228,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + urllib.quote('Invalid database from classic GEN'), search) # general only
+                         '&error_message=' + urllib.quote('Invalid database from classic GEN') + '/', search) # general only
 
     def test_article_sel(self):
         """article_sel to property:article"""
@@ -241,13 +241,13 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_doctype}') +
                          '&fq_doctype=(' + urllib.quote_plus('doctype_facet_hier:"0/Article"') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
         req.args = MultiDict([('article_sel', 'NO')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + urllib.quote('Invalid value for article_sel: NO'), search)
+                         '&error_message=' + urllib.quote('Invalid value for article_sel: NO') + '/', search)
 
     def test_data_link(self):
         """data_link to property:data"""
@@ -258,7 +258,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('esources:*') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('esources:*') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_preprint_link(self):
         """preprint_link to property:eprint"""
@@ -269,7 +269,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('esources:("EPRINT_HTML")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('esources:("EPRINT_HTML")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_open_link(self):
         """open_link to property:OPENACCESS"""
@@ -280,7 +280,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('property:("OPENACCESS")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('property:("OPENACCESS")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_multiple_link_properties(self):
         """multiple Bumblebee property fields set"""
@@ -292,7 +292,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=(' + urllib.quote('esources:*') + ' AND ' +  urllib.quote('property:("OPENACCESS")') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_classic_parameters_entry_date(self):
         """test entry date"""
@@ -304,48 +304,48 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # no pub date
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # no pub date
 
         req.args = MultiDict([('start_entry_year', 1990), ('end_entry_year', 1991)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["1990-01-01" TO "1991-12-31"]') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # both years only
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # both years only
 
         req.args = MultiDict([('start_entry_year', 1990), ('start_entry_mon', 5), ('end_entry_year', 1991), ('end_entry_mon', 9)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["1990-05-01" TO "1991-09-30"]') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search) # years and months
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # years and months
 
         req.args = MultiDict([('start_entry_year', 1990), ('end_entry_year', 1991), ('end_entry_mon', 10)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["1990-01-01" TO "1991-10-31"]') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no start mon
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no start mon
 
         req.args = MultiDict([('start_entry_year', 1990), ('start_entry_mon', 5), ('end_entry_year', 1991)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["1990-05-01" TO "1991-12-31"]') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no end mon
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no end mon
 
         req.args = MultiDict([('start_entry_year', 1990), ('start_entry_mon', 5)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["1990-05-01" TO *]') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no end
+        self.assertEqual('q=' + urllib.quote('entdate:["1990-05-01" TO "{}"]'.format(datetime.now().strftime("%Y-%m-%d"))) +
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no end
         req.args = MultiDict([('end_entry_year', 1991), ('end_entry_mon', 10)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:[* TO "1991-10-31"]') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no start
+        self.assertEqual('q=' + urllib.quote('entdate:["0001-01-01" TO "1991-10-31"]') +
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no start
 
         req.args = MultiDict([('start_entry_year', 1990), ('start_entry_mon', 5), ('start_entry_day', 6),
                               ('end_entry_year', 1991), ('end_entry_mon', 9), ('end_entry_day', 10)])
@@ -353,7 +353,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["1990-05-06" TO "1991-09-10"]') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search) # years, months, days
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # years, months, days
 
     def test_classic_results_subset(self):
         """test results subset"""
@@ -365,7 +365,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # no results subset
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # no results subset
 
         req.args = MultiDict([('nr_to_return', 20) , ('start_nr', 1)])
         view = ClassicSearchRedirectView()
@@ -396,13 +396,13 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # no value
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # no value
 
         req.args = MultiDict([('return_req', 'result')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # only valid value
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # only valid value
 
         req.args = MultiDict([('return_req', 'form')])
         req.args.update(self.append_defaults())
@@ -421,13 +421,13 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # no value
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # no value
 
         req.args = MultiDict([('jou_pick', 'ALL')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search) # no clause should be specified, defaults to all
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no clause should be specified, defaults to all
 
         req.args = MultiDict([('jou_pick', 'NO')])
         req.args.update(self.append_defaults())
@@ -435,7 +435,7 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') +
                          '&fq_property=(' + urllib.quote('property:("refereed")') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search) # only refereed
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # only refereed
 
         req.args = MultiDict([('jou_pick', 'EXCL')])
         req.args.update(self.append_defaults())
@@ -443,7 +443,7 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') +
                          '&fq_property=(' + urllib.quote('property:("not refereed")') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)    # exclude refereed
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)    # exclude refereed
 
         req.args = MultiDict([('jou_pick', 'foo')])
         req.args.update(self.append_defaults())
@@ -485,7 +485,7 @@ class TestSearchParametersTranslation(TestCase):
         req.mimetype = None
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=foo&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=foo&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_data_and(self):
         """test data_and"""
@@ -497,7 +497,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # no value
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # no value
 
         req.args = MultiDict([('data_and', 'NO'), ('article', 'YES'), ('gif_link', 'YES')])
         req.args.update(self.append_defaults())
@@ -505,7 +505,7 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=(' +
                          urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' OR ' + urllib.quote('esources:("ADS_SCAN")') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('data_and', 'NO'), ('article', 'YES'), ('gif_link', 'YES')])
         req.args.update(self.append_defaults())
@@ -513,7 +513,7 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=(' +
                          urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' OR ' + urllib.quote('esources:("ADS_SCAN")') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('data_and', 'YES'), ('article', 'YES'), ('gif_link', 'YES')])
         req.args.update(self.append_defaults())
@@ -521,7 +521,7 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=(' +
                          urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' AND ' + urllib.quote('esources:("ADS_SCAN")') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('data_and', 'NOT'), ('article', 'YES'), ('gif_link', 'YES')])
         req.args.update(self.append_defaults())
@@ -529,7 +529,7 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=(NOT ' +
                          urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + ' NOT ' + urllib.quote('esources:("ADS_SCAN")') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('data_and', 'foo')])
         req.args.update(self.append_defaults())
@@ -549,7 +549,7 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=' +
                          urllib.quote('esources:("PUB_PDF" OR "PUB_HTML" OR "AUTHOR_PDF" OR "AUTHOR_HTML" OR "ADS_PDF" OR "ADS_SCAN")') +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_gif_link(self):
         """test gif_link"""
@@ -560,7 +560,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('esources:("ADS_SCAN")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('esources:("ADS_SCAN")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_article(self):
         """test article"""
@@ -571,7 +571,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('esources:("PUB_PDF" OR "PUB_HTML")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_toc_link(self):
         """test toc_link"""
@@ -582,7 +582,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('property:("TOC")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('property:("TOC")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_ref_link(self):
         """test ref_link"""
@@ -593,7 +593,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('reference:*') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('reference:*') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_citation_link(self):
         """test citation_link"""
@@ -604,7 +604,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('citation_count:[1 TO *]') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('citation_count:[1 TO *]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_associated_link(self):
         """test associated_link"""
@@ -615,7 +615,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('property:("ASSOCIATED")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('property:("ASSOCIATED")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_simb_obj(self):
         """test simb_obj"""
@@ -626,7 +626,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('data:("simbad")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('data:("simbad")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_ned_obj(self):
         """test ned_obj"""
@@ -637,7 +637,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('data:("ned")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('data:("ned")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_pds_link(self):
         """test pds_link"""
@@ -648,7 +648,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('data:("PDS")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('data:("PDS")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_aut_note(self):
         """test aut_note"""
@@ -659,7 +659,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('property:("NOTE")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('property:("NOTE")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_ar_link(self):
         """test ar_link"""
@@ -670,7 +670,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('read_count:[1 TO *]') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('read_count:[1 TO *]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_multimedia_link(self):
         """test multimedia_link"""
@@ -681,7 +681,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('property:("PRESENTATION")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('property:("PRESENTATION")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_spires_link(self):
         """test spires_link"""
@@ -692,7 +692,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('property:("INSPIRE")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('property:("INSPIRE")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_abstract(self):
         """test abstract"""
@@ -703,7 +703,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('abstract:*') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('abstract:*') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_lib_link(self):
         """test lib_link"""
@@ -714,7 +714,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('property:("LIBRARYCATALOG")') + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=' + urllib.quote('property:("LIBRARYCATALOG")') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
     def test_error_link(self):
         """test error in data group"""
@@ -726,7 +726,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + urllib.quote('Invalid value for abstract: foo'), search)
+                         '&error_message=' + urllib.quote('Invalid value for abstract: foo') + '/', search)
 
     def test_group_and(self):
         """test group_and"""
@@ -738,7 +738,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('group_and', 'NO'), ('group_sel', 'ARI'), ('group_sel', 'ESO/Lib'), ('group_sel', 'HST')])
         req.args.update(self.append_defaults())
@@ -746,7 +746,7 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibgroup_facet}') +
                          '&fq_bibgroup_facet=(' + urllib.quote_plus('bibgroup_facet:("ARI" OR "ESO/Lib" OR "HST")') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('group_and', 'YES'), ('group_sel', 'ARI'), ('group_sel', 'ESO/Lib'), ('group_sel', 'HST')])
         req.args.update(self.append_defaults())
@@ -754,28 +754,28 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibgroup_facet}') +
                          '&fq_bibgroup_facet=(' + urllib.quote_plus('bibgroup_facet:("ARI" AND "ESO/Lib" AND "HST")') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('group_and', 'foo')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + urllib.quote('Invalid value for group_and: foo'), search)
+                         '&error_message=' + urllib.quote('Invalid value for group_and: foo') + '/', search)
 
         req.args = MultiDict([('group_and', 'YES'), ('group_sel', 'foo')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + urllib.quote('Invalid value for group_sel: foo'), search)
+                         '&error_message=' + urllib.quote('Invalid value for group_sel: foo') + '/', search)
 
         req.args = MultiDict([('group_and', 'YES'), ('group_sel', '')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + urllib.quote('Invalid value for group_sel: '), search)
+                         '&error_message=' + urllib.quote('Invalid value for group_sel: ') + '/', search)
 
     def test_sort(self):
         """test sort"""
@@ -787,19 +787,19 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('sort', 'SCORE')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('sort', 'foo')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&error_message=' + urllib.quote('Invalid value for sort: foo'), search)
+        self.assertEqual('q=*:*' + '&error_message=' + urllib.quote('Invalid value for sort: foo') + '/', search)
 
     def test_arxiv_sel(self):
         """test arxiv_sel"""
@@ -812,21 +812,21 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=keyword:(' + urllib.quote('"computer science" OR "physics"') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('arxiv_sel', '')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + \
-                         '&error_message=' + urllib.quote('Invalid value for arxiv_sel: '), search)
+                         '&error_message=' + urllib.quote('Invalid value for arxiv_sel: ') + '/', search)
 
         req.args = MultiDict([('arxiv_sel', 'ADS')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + \
-                         '&error_message=' + urllib.quote('Invalid value for arxiv_sel: ADS'), search)
+                         '&error_message=' + urllib.quote('Invalid value for arxiv_sel: ADS') + '/', search)
 
         req.args = MultiDict([('arxiv_sel', 'astro-ph'), ('arxiv_sel', 'cond-mat'), ('arxiv_sel', 'cs'), ('arxiv_sel', 'gr-qc'),
                               ('arxiv_sel', 'hep-ex'), ('arxiv_sel', 'hep-lat'), ('arxiv_sel', 'hep-ph'), ('arxiv_sel', 'hep-th'),
@@ -836,14 +836,14 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=property:(' + urllib.quote("EPRINT_OPENACCESS") + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
         req.args = MultiDict([('db_key', 'AST'), ('arxiv_sel', 'cs'), ('arxiv_sel', 'physics')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)  # astronomy only
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # astronomy only
 
     def test_ref_stems(self):
         """test ref_stems"""
@@ -855,7 +855,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=bibstem:(' + urllib.quote('"ApJ"') + ' OR ' +  urllib.quote('" AJ"') + ' OR ' +  urllib.quote('" AAS"') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc'), search)
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
