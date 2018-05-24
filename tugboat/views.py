@@ -12,6 +12,7 @@ from webargs import fields
 from webargs.flaskparser import parser
 import urllib
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 import calendar
 import re
 from collections import OrderedDict
@@ -282,8 +283,8 @@ class ClassicSearchRedirectView(Resource):
             # here if there are unprocessed parameters
             # pass their names out ads/bumblebee
             solr_query += '&unprocessed_parameter=' + urllib.quote('Parameters not processed: ' + ' '.join(args.keys()))
-
-        return solr_query
+        # add an extra slash for safari browser
+        return solr_query + '/'
 
 
     @staticmethod
@@ -426,65 +427,114 @@ class ClassicSearchRedirectView(Resource):
             self.translation.search.append('AND')
         self.translation.search.append(search)
 
+    def translate_entry_date_start(self, args):
+        """ return formatted start date for entry date"""
+        try:
+            # get the start dates, if specified turned to int,
+            # if not init to 0
+            start_year = args.pop('start_entry_year', None)
+            if not self.supplied(start_year):
+                start_year = 0
+            else:
+                start_year = int(start_year)
+            start_month = args.pop('start_entry_mon', None)
+            if not self.supplied(start_month):
+                start_month = 0
+            else:
+                start_month = int(start_month)
+            start_day = args.pop('start_entry_day', None)
+            if not self.supplied(start_day):
+                start_day = 0
+            else:
+                start_day = int(start_day)
+            # is it date or offset date
+            date = sum(d > 0 for d in [start_year,start_month,start_day])
+            offset = sum(d < 0 for d in [start_year,start_month,start_day])
+            if date > 0 and offset > 0:
+                self.translation.error_message.append('can not combine a date and offset (negative value) for the Entry Date')
+                return None
+            # if offset has been specified, get current date, subtract the offset, turn into string and return
+            if offset > 0:
+                today_start = datetime.now()
+                today_start = today_start - relativedelta(days=-start_day, months=-start_month, years=-start_year)
+                return today_start.strftime("%Y-%m-%d")
+            # if any date fields has been specified, turn into string and return
+            # beginning of the time is 01-01-01
+            if date >= 0:
+                start_year = start_year if start_year != 0 else 1
+                start_month = start_month if start_month != 0 else 1
+                start_day = start_day if start_day != 0 else 1
+                return '{:04d}-{:02d}-{:02d}'.format(start_year, start_month, start_day)
+        except:
+            self.translation.error_message.append('found a non numeric value in the Entry Date')
+            return None
+
+    def translate_entry_date_end(self, args):
+        """ return formatted end date for entry date"""
+        try:
+            # get the end dates, if specified turned to int,
+            # if not init to 0
+            end_year = args.pop('end_entry_year', None)
+            if not self.supplied(end_year):
+                end_year = 0
+            else:
+                end_year = int(end_year)
+            end_month = args.pop('end_entry_mon', None)
+            if not self.supplied(end_month):
+                end_month = 0
+            else:
+                end_month = int(end_month)
+            end_day = args.pop('end_entry_day', None)
+            if not self.supplied(end_day):
+                end_day = 0
+            else:
+                end_day = int(end_day)
+            # is it date or offset date
+            date = sum(d > 0 for d in [end_year,end_month,end_day])
+            offset = sum(d < 0 for d in [end_year,end_month,end_day])
+            if date > 0 and offset > 0:
+                self.translation.error_message.append('can not combine a date and offset (negative value) for the Entry Date')
+                return None
+            # if offset has been specified, get current date, subtract the offset, turn into string and return
+            if offset > 0:
+                today_end = datetime.now()
+                today_end = today_end - relativedelta(days=-end_day, months=-end_month, years=-end_year)
+                return today_end.strftime("%Y-%m-%d")
+            # if no value has been specified for date, get now, turn into string and return
+            if date == 0:
+                today_end = datetime.now()
+                return today_end.strftime("%Y-%m-%d")
+            # if any date fields has been specified, turn into string and return
+            if date > 0:
+                # if year has not been specified get now
+                end_year = end_year if end_year != 0 else datetime.now().year
+                # depending on if year is specified init to the end of that year, or if no year init to now
+                end_month = end_month if end_month != 0 else (datetime.now().month if end_year == datetime.now().year else 12)
+                end_day = end_day if end_day != 0 else \
+                    (datetime.now().day if end_year == datetime.now().year else calendar.monthrange(end_year, end_month)[1])
+                return '{:04d}-{:02d}-{:02d}'.format(end_year, end_month, end_day)
+        except:
+            self.translation.error_message.append('found a non numeric value in the Entry Date')
+            return None
+
     def translate_entry_date(self, args):
         """ return string for pubdate element
-        like pubdate search, only start on end need be specified
-        bumblebee does not yet implement, assume to follow pubdate
+        entry date has a dual functionality, it can be used to enter the date,
+        or offset and then the date is computed from it.
         """
-        start_year = args.pop('start_entry_year', None)
-        end_year = args.pop('end_entry_year', None)
-        start_month = args.pop('start_entry_mon', None)
-        start_day = args.pop('start_entry_day', None)
-        end_month = args.pop('end_entry_mon', None)
-        end_day = args.pop('end_entry_day', None)
+        # at least one entry date field needs to have been populated to continue
+        if 'start_entry_year' not in args and 'start_entry_mon' not in args and 'start_entry_day' not in args and \
+           'end_entry_year' not in args and 'end_entry_mon' not in args and 'end_entry_day' not in args:
+            return
 
-        if self.supplied(start_year) is False and self.supplied(end_year) is False:
-            return  # nothing to do
-
-        # if start is not provided, use beginning of time
-        if not self.supplied(start_year):
-            start_year = 0
-        if not self.supplied(start_month):
-            start_month = 1
-        if not self.supplied(start_day):
-            start_day = 1
-
-        # if end is not provided, use end of time
-        if not self.supplied(end_year):
-            end_year = 2222
-            tmp = datetime.now()
-            if not self.supplied(end_month):
-                end_month = tmp.month
-            if not self.supplied(end_day):
-                end_day = tmp.day
-        else:
-            if not self.supplied(end_month):
-                end_month = 12
-            if not self.supplied(end_day):
-                # get last day of end month/year
-                end_day = calendar.monthrange(int(end_year), int(end_month))[1]
-
-        start_year = int(start_year)
-        start_month = int(start_month)
-        start_day = int(start_day)
-        end_year = int(end_year)
-        end_month = int(end_month)
-        end_day = int(end_day)
-        # we can use * for solr query if either start_year or end_year are not set
-        # did not change the code above that actually set the values if either is missing
-        if start_year == 0:
-            search = 'entdate' + urllib.quote(':[* TO "{:04d}-{:02}-{:02d}"]'.format(
-                                                            end_year, end_month, end_day))
-        elif end_year == 2222:
-            search = 'entdate' + urllib.quote(':["{:04d}-{:02d}-{:02d}" TO *]'.format(
-                                                      start_year, start_month, start_day))
-        else:
-            search = 'entdate' + urllib.quote(':["{:04d}-{:02d}-{:02d}" TO "{:04d}-{:02}-{:02d}"]'.format(
-                                                    start_year, start_month, start_day, end_year, end_month, end_day))
-        # fields in search are ANDed as of 5/9
-        if len(self.translation.search) > 0:
-            self.translation.search.append('AND')
-        self.translation.search.append(search)
+        start_date = self.translate_entry_date_start(args)
+        end_date = self.translate_entry_date_end(args)
+        if start_date is not None and end_date is not None:
+            search = 'entdate' + urllib.quote(':["{}" TO "{}"]'.format(start_date, end_date))
+            # fields in search are ANDed as of 5/9
+            if len(self.translation.search) > 0:
+                self.translation.search.append('AND')
+            self.translation.search.append(search)
 
     def validate_db_key(self, db_key):
         """Validate database selections"""
