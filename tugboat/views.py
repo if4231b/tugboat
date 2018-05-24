@@ -527,8 +527,8 @@ class ClassicSearchRedirectView(Resource):
             'end_entry_day' not in args and 'end_entry_mon' not in args and 'end_entry_year' not in args:
             return
 
-        add = len(args['start_entry_year']) > 0 and len(args['start_entry_mon']) > 0 and len(args['start_entry_day']) > 0 and \
-              len(args['end_entry_year']) > 0 and len(args['end_entry_mon']) > 0 and len(args['end_entry_day']) > 0
+        add = len(args['start_entry_year']) > 0 or len(args['start_entry_mon']) > 0 or len(args['start_entry_day']) > 0 or \
+              len(args['end_entry_year']) > 0 or len(args['end_entry_mon']) > 0 or len(args['end_entry_day']) > 0
 
         start_date = self.translate_entry_date_start(args)
         end_date = self.translate_entry_date_end(args)

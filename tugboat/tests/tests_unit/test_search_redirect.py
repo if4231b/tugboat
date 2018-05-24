@@ -161,43 +161,44 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # no pub date
 
-        req.args = MultiDict([('start_year', "1990"), ('end_year', "1991")])
+        req.args = MultiDict([('start_year', 1990), ('end_year', 1991)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('pubdate:[1990-01 TO 1991-12]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # both years only
 
-        req.args = MultiDict([('start_year', "1990"), ('start_mon', "5"), ('end_year', "1991"), ('end_mon', "10")])
+        req.args = MultiDict([('start_year', 1990), ('start_mon', 5), ('end_year', 1991), ('end_mon', 10)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('pubdate:[1990-0, "5 TO 1991-, "10]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # years and months
+        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO 1991-10]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # years and months
 
-        req.args = MultiDict([('start_year', "1990"), ('end_year', "1991"), ('end_mon', "10")])
+        req.args = MultiDict([('start_year', 1990), ('end_year', 1991), ('end_mon', 10)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('pubdate:[1990-01 TO 1991-, "10]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no start mon
+        self.assertEqual('q=' + urllib.quote('pubdate:[1990-01 TO 1991-10]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no start mon
 
-        req.args = MultiDict([('start_year', "1990"), ('start_mon', "5"), ('end_year', "1991")])
+        req.args = MultiDict([('start_year', 1990), ('start_mon', 5), ('end_year', 1991)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('pubdate:[1990-0, "5 TO 1991-12]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no end mon
+        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO 1991-12]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no end mon
 
-        req.args = MultiDict([('start_year', "1990"), ('start_mon', "5")])
+        req.args = MultiDict([('start_year', 1990), ('start_mon', 5)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         n = datetime.now()
-        self.assertEqual('q=' + urllib.quote('pubdate:[1990-0, "5 TO *]') +
+        self.assertEqual('q=' + urllib.quote('pubdate:[1990-05 TO *]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no end
 
-        req.args = MultiDict([('end_year', "1991), ('end_mon', , "10)])
+        req.args = MultiDict([('end_year', 1991), ('end_mon', 10)])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('pubdate:[* TO 1991-, "10]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no start
+        self.assertEqual('q=' + urllib.quote('pubdate:[* TO 1991-10]') + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no start
+
 
     def test_database(self):
         """database can be astronomy or physics
@@ -308,49 +309,50 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # no pub date
 
-        req.args = MultiDict([('start_entry_year', 1990), ('end_entry_year', 1991)])
+        req.args = MultiDict([('start_entry_year', "1990"), ('end_entry_year', "1991")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["1990-01-01" TO "1991-12-31"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # both years only
 
-        req.args = MultiDict([('start_entry_year', 1990), ('start_entry_mon', 5), ('end_entry_year', 1991), ('end_entry_mon', 9)])
+        req.args = MultiDict([('start_entry_year', "1990"), ('start_entry_mon', "5"),
+                              ('end_entry_year', "1991"), ('end_entry_mon', "9")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["1990-05-01" TO "1991-09-30"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # years and months
 
-        req.args = MultiDict([('start_entry_year', 1990), ('end_entry_year', 1991), ('end_entry_mon', 10)])
+        req.args = MultiDict([('start_entry_year', "1990"), ('end_entry_year', "1991"), ('end_entry_mon', "10")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["1990-01-01" TO "1991-10-31"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no start mon
 
-        req.args = MultiDict([('start_entry_year', 1990), ('start_entry_mon', 5), ('end_entry_year', 1991)])
+        req.args = MultiDict([('start_entry_year', "1990"), ('start_entry_mon', "5"), ('end_entry_year', "1991")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["1990-05-01" TO "1991-12-31"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no end mon
 
-        req.args = MultiDict([('start_entry_year', 1990), ('start_entry_mon', 5)])
+        req.args = MultiDict([('start_entry_year', "1990"), ('start_entry_mon', "5")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["1990-05-01" TO "{}"]'.format(datetime.now().strftime("%Y-%m-%d"))) +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no end
-        req.args = MultiDict([('end_entry_year', 1991), ('end_entry_mon', 10)])
+        req.args = MultiDict([('end_entry_year', "1991"), ('end_entry_mon', "10")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('entdate:["0001-01-01" TO "1991-10-31"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # no start
 
-        req.args = MultiDict([('start_entry_year', 1990), ('start_entry_mon', 5), ('start_entry_day', 6),
-                              ('end_entry_year', 1991), ('end_entry_mon', 9), ('end_entry_day', 10)])
+        req.args = MultiDict([('start_entry_year', "1990"), ('start_entry_mon', "5"), ('start_entry_day', "6"),
+                              ('end_entry_year', "1991"), ('end_entry_mon', "9"), ('end_entry_day', "10")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
