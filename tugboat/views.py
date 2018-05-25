@@ -384,10 +384,8 @@ class ClassicSearchRedirectView(Resource):
         if year > 100:
             return year
 
-        #Math.abs(fullYear - year + fullYear - shortYear) < Math.abs(fullYear - year + fullYear - shortYear - 100) ?
-        # year + fullYear - shortYear : year + fullYear - shortYear -100;
         diff_year = datetime.now().year - (datetime.now().year % 100)
-        return year + diff_year if year + diff_year < datetime.now().year else year + diff_year - 100
+        return year + diff_year if year + diff_year <= datetime.now().year + 1 else year + diff_year - 100
 
     def translate_pubdate(self, args):
         """translate string with pubdate element
