@@ -375,6 +375,20 @@ class ClassicSearchRedirectView(Resource):
                 self.translation.search.append('AND')
             self.translation.search.append(search)
 
+    def convert_year_short_to_long(self, year):
+        """convert 2-digit year to 4-digit year"""
+        # leave these alone, these are indication of min,max years that shall be replaced by *
+        if year == 0 or year == 2222:
+            return year
+
+        if year > 100:
+            return year
+
+        #Math.abs(fullYear - year + fullYear - shortYear) < Math.abs(fullYear - year + fullYear - shortYear - 100) ?
+        # year + fullYear - shortYear : year + fullYear - shortYear -100;
+        diff_year = datetime.now().year - (datetime.now().year % 100)
+        return year + diff_year if year + diff_year < datetime.now().year else year + diff_year - 100
+
     def translate_pubdate(self, args):
         """translate string with pubdate element
         for pubdate date search, only start or end need be specified
@@ -408,9 +422,9 @@ class ClassicSearchRedirectView(Resource):
             if not self.supplied(end_month):
                 end_month = 12
 
-        start_year = int(start_year)
+        start_year = self.convert_year_short_to_long(int(start_year))
         start_month = int(start_month)
-        end_year = int(end_year)
+        end_year = self.convert_year_short_to_long(int(end_year))
         end_month = int(end_month)
         # we can use * for solr query if either start_year or end_year are not set
         # did not change the code above that actually set the values if either is missing
@@ -436,7 +450,7 @@ class ClassicSearchRedirectView(Resource):
             if not self.supplied(start_year):
                 start_year = 0
             else:
-                start_year = int(start_year)
+                start_year = self.convert_year_short_to_long(int(start_year))
             start_month = args.pop('start_entry_mon', None)
             if not self.supplied(start_month):
                 start_month = 0
@@ -478,7 +492,7 @@ class ClassicSearchRedirectView(Resource):
             if not self.supplied(end_year):
                 end_year = 0
             else:
-                end_year = int(end_year)
+                end_year = self.convert_year_short_to_long(int(end_year))
             end_month = args.pop('end_entry_mon', None)
             if not self.supplied(end_month):
                 end_month = 0
@@ -522,13 +536,15 @@ class ClassicSearchRedirectView(Resource):
         entry date has a dual functionality, it can be used to enter the date,
         or offset and then the date is computed from it.
         """
-        # at least one entry date field needs to have been populated to continue
-        if 'start_entry_day' not in args and 'start_entry_mon' not in args and 'start_entry_year' not in args and \
-            'end_entry_day' not in args and 'end_entry_mon' not in args and 'end_entry_year' not in args:
-            return
+        fields = ['start_entry_day', 'start_entry_mon', 'start_entry_year',\
+                  'end_entry_day', 'end_entry_mon', 'end_entry_year']
 
-        add = len(args['start_entry_year']) > 0 or len(args['start_entry_mon']) > 0 or len(args['start_entry_day']) > 0 or \
-              len(args['end_entry_year']) > 0 or len(args['end_entry_mon']) > 0 or len(args['end_entry_day']) > 0
+        # at least one entry date field needs to have been populated to continue
+        # this is needed for the test side, from the production side this is always false
+        if sum([1 for f in fields if f in args]) == 0:
+            return
+        # if user has set values for any of fields
+        add = sum([1 for f in fields if len(args[f]) > 0]) > 0
 
         start_date = self.translate_entry_date_start(args)
         end_date = self.translate_entry_date_end(args)

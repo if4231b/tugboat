@@ -359,6 +359,20 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('q=' + urllib.quote('entdate:["1990-05-06" TO "1991-09-10"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # years, months, days
 
+        req.args = MultiDict([('start_entry_year', "90"), ('end_entry_year', "10")])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('entdate:["1990-01-01" TO "2010-12-31"]') +
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # years, months, days
+
+        req.args = MultiDict([('start_entry_year', "19"), ('end_entry_year', "17")])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('entdate:["1919-01-01" TO "2017-12-31"]') +
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # years, months, days
+
     def test_classic_results_subset(self):
         """test results subset"""
         req = Request('get', 'http://test.test?')
