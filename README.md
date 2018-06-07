@@ -22,7 +22,7 @@ In one terminal do
     $ vim local_config.py # edit, edit
     $ python wsgi.py
 
-
+ 
 ## To see identified articles redirect to BBB go to :
 
 Either from browser go to
