@@ -214,7 +214,9 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         # the search query should be 'q=*:*&fq={!type=aqp v=$fq_database}&fq_database=(database:"astronomy")'
         # but with only some of the special characters html encoded
-        self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
+        self.assertEqual('filter_database_fq_database=OR' +
+                         '&filter_database_fq_database=database:"astronomy"' +
+                         '&q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          search)  # astronomy only
 
@@ -222,7 +224,9 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22physics%22)' +
+        self.assertEqual('filter_database_fq_database=OR' +
+                         '&filter_database_fq_database=database:"physics"' +
+                         '&q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22physics%22)' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          search) # physics only
 
@@ -242,7 +246,9 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_doctype}') +
+        self.assertEqual('filter_doctype_facet_hier_fq_doctype=AND' +
+                         '&filter_doctype_facet_hier_fq_doctype=' + urllib.quote_plus('doctype_facet_hier:"0/Article"') +
+                         '&q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_doctype}') +
                          '&fq_doctype=(' + urllib.quote_plus('doctype_facet_hier:"0/Article"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
         req.args = MultiDict([('article_sel', 'NO')])
@@ -451,7 +457,9 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') +
+        self.assertEqual('filter_property_fq_property=AND' +
+                         '&filter_property_fq_property=property:"refereed"' +
+                         '&q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') +
                          '&fq_property=(' + urllib.quote('property:("refereed")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # only refereed
 
@@ -459,7 +467,9 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') +
+        self.assertEqual('filter_property_fq_property=AND' +
+                         '&filter_property_fq_property=property:"not refereed"' +
+                         '&q=*:*&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') +
                          '&fq_property=(' + urllib.quote('property:("not refereed")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)    # exclude refereed
 
@@ -762,7 +772,11 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibgroup_facet}') +
+        self.assertEqual('filter_bibgroup_facet_fq_bibgroup_facet=OR' +
+                         '&filter_bibgroup_facet_fq_bibgroup_facet=bibgroup_facet:"ARI"' +
+                         '&filter_bibgroup_facet_fq_bibgroup_facet=bibgroup_facet:"ESO/Lib"' +
+                         '&filter_bibgroup_facet_fq_bibgroup_facet=bibgroup_facet:"HST"' +
+                         '&q=*:*' + '&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibgroup_facet}') +
                          '&fq_bibgroup_facet=(' + urllib.quote_plus('bibgroup_facet:("ARI" OR "ESO/Lib" OR "HST")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
@@ -770,7 +784,11 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibgroup_facet}') +
+        self.assertEqual('filter_bibgroup_facet_fq_bibgroup_facet=AND' +
+                         '&filter_bibgroup_facet_fq_bibgroup_facet=bibgroup_facet:"ARI"' +
+                         '&filter_bibgroup_facet_fq_bibgroup_facet=bibgroup_facet:"ESO/Lib"' +
+                         '&filter_bibgroup_facet_fq_bibgroup_facet=bibgroup_facet:"HST"' +
+                         '&q=*:*' + '&fq=' + urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibgroup_facet}') +
                          '&fq_bibgroup_facet=(' + urllib.quote_plus('bibgroup_facet:("ARI" AND "ESO/Lib" AND "HST")') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
@@ -860,8 +878,12 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)  # astronomy only
+        self.assertEqual('filter_database_fq_database=OR' +
+                         '&filter_database_fq_database=database:"astronomy"' +
+                         '&q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
+                         '&sort=' + urllib.quote('date desc, bibcode desc') +
+                         '&warning_message=' + urllib.quote('if either or both astronomy and physics databases are selected, arXiv database is ignored') + '/',
+                         search)  # astronomy only
 
     def test_ref_stems(self):
         """test ref_stems"""

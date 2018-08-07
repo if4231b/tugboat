@@ -64,6 +64,7 @@ class TranslationValue():
         self.warning_message = []
         self.unprocessed_fields = []
         self.sort = ''
+        self.facet = []
 
 class ClassicSearchRedirectView(Resource):
     """
@@ -267,7 +268,8 @@ class ClassicSearchRedirectView(Resource):
         # combine translation fragments in self.translation to ads/bumblebee parameter string
         if len(self.translation.search) == 0:
             self.translation.search = ['*:*']
-        solr_query = 'q=' + ' '.join(self.translation.search)
+        solr_query  = ''.join(self.translation.facet) + '&' if len(self.translation.facet) > 0 else ''
+        solr_query += 'q=' + ' '.join(self.translation.search)
         if len(self.translation.filter) > 0:
             solr_query += '&fq=' + '&fq='.join(self.translation.filter)
         if len(self.translation.sort) > 0:
@@ -336,17 +338,24 @@ class ClassicSearchRedirectView(Resource):
         authors_str = args.pop('author', None)
         if authors_str:
             authors = self.classic_field_to_array(authors_str)
-            search += urllib.quote(author_field) + '('
-            for author in authors:
-                search += urllib.quote(author + connector)
-            search = search[:-len(urllib.quote(connector))]  # remove final
-            search += ')'
-            # fields in search are ANDed as of 5/9 and issue a warning
-            if len(self.translation.search) > 0:
-                self.translation.search.append('AND')
-            self.translation.search.append(search)
-            if len(authors) > 1 and logic == 'OR':
-                self.translation.warning_message.append(urllib.quote('author search terms combined with AND rather than OR'))
+            # is it a single author search: ^last, first$
+            match = re.findall('\^(.*)\$', ' '.join(authors))
+            # yes
+            if match:
+                search = 'author:"' + match[0] + '" and author_count:1'
+                self.translation.search.append(search)
+            else:
+                search += urllib.quote(author_field) + '('
+                for author in authors:
+                    search += urllib.quote(author + connector)
+                search = search[:-len(urllib.quote(connector))]  # remove final
+                search += ')'
+                # fields in search are ANDed as of 5/9 and issue a warning
+                if len(self.translation.search) > 0:
+                    self.translation.search.append('AND')
+                self.translation.search.append(search)
+                if len(authors) > 1 and logic == 'OR':
+                    self.translation.warning_message.append(urllib.quote('author search terms combined with AND rather than OR'))
 
     def translate_simple(self, args, classic_param, bbb_param):
         """process easy to translate fields like title
@@ -576,14 +585,23 @@ class ClassicSearchRedirectView(Resource):
         if value is None:
             return
         if self.validate_db_key(value):
-            # if all entries are valid include them, anding them
+            # if all entries are valid include them by oring them
             db_key = ''
+            # 8/6/2018 -- to view the filters properly in BBB the format for database is as follows
+            #       &filter_database_fq_database=OR
+            #       &filter_database_fq_database=database:"general"
+            #       &filter_database_fq_database=database:"physics"
+            #       &fq={!type=aqp v=$fq_database}&fq_database=(database:"general" OR database:"physics")
+            if len(self.translation.facet) > 0:
+                self.translation.facet.append('&')
+            self.translation.facet.append('filter_database_fq_database=OR')
             entry = value.split(',')
             for e in entry:
                 if e != 'PRE':
                     if len(db_key) > 0:
                         db_key += ' OR '
                     db_key += 'database:"' + dict_db[e] + '"'
+                    self.translation.facet.append('&filter_database_fq_database=' + 'database:"' + dict_db[e] + '"')
             if len(db_key) > 0:
                 self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_database}') + \
                                                '&fq_database=(' + urllib.quote(db_key) + ')')
@@ -611,10 +629,22 @@ class ClassicSearchRedirectView(Resource):
             # include everything in results, which is default
             pass
         elif jou_pick == 'NO':
+            # 8/6/2018 -- to view the filters properly in BBB the format for property is as follows
+            # filter_property_fq_property=AND
+            # &filter_property_fq_property=property:"refereed"
+            # &fq={!type=aqp v=$fq_property}&fq_property=(property:"refereed")
+            if len(self.translation.facet) > 0:
+                self.translation.facet.append('&')
+            self.translation.facet.append('filter_property_fq_property=AND')
+            self.translation.facet.append('&filter_property_fq_property=property:"refereed"')
             # only include refereed journals
             self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
                                            '&fq_property=(' + urllib.quote('property:("refereed")') + ')')
         elif jou_pick == 'EXCL':
+            if len(self.translation.facet) > 0:
+                self.translation.facet.append('&')
+            self.translation.facet.append('filter_property_fq_property=AND')
+            self.translation.facet.append('&filter_property_fq_property=property:"not refereed"')
             # only include non-refereed
             self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
                                            '&fq_property=(' + urllib.quote('property:("not refereed")') + ')')
@@ -710,12 +740,20 @@ class ClassicSearchRedirectView(Resource):
                 return
             if self.validate_group_sel(value):
                 # if all entries are valid include them, adding in the selected operator
+                # 8/6/2018 -- to view the filters properly in BBB the format for bibgroup is as follows
+                # filter_bibgroup_facet_fq_bibgroup_facet=AND
+                # &filter_bibgroup_facet_fq_bibgroup_facet=bibgroup_facet:"CfA"
+                # &fq={!type=aqp v=$fq_bibgroup_facet}&fq_bibgroup_facet=(bibgroup_facet:"CfA")
+                if len(self.translation.facet) > 0:
+                    self.translation.facet.append('&')
+                self.translation.facet.append('filter_bibgroup_facet_fq_bibgroup_facet=' + operator)
                 group_sel = ''
                 entry = value.split(',')
                 for e in entry:
                     if (operator == 'NOT') or len(group_sel) > 0:
                         group_sel += ' ' + operator + ' '
                     group_sel += '"' + e + '"'
+                    self.translation.facet.append('&filter_bibgroup_facet_fq_bibgroup_facet=' + 'bibgroup_facet:"' + e + '"')
                 if len(group_sel) > 0:
                     self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibgroup_facet}') + \
                         '&fq_bibgroup_facet=(' + urllib.quote_plus('bibgroup_facet:({})'.format(group_sel)) + ')')
@@ -761,6 +799,15 @@ class ClassicSearchRedirectView(Resource):
         if article_sel is None:
             pass
         elif article_sel == 'YES':
+            # 8/6/2018 -- to view the filters properly in BBB the format for doctype is as follows
+            # filter_doctype_facet_hier_fq_doctype=AND
+            # &filter_doctype_facet_hier_fq_doctype=doctype_facet_hier:"0/Article"
+            # &fq={!type=aqp v=$fq_doctype}&fq_doctype=(doctype_facet_hier:"0/Article")
+            if len(self.translation.facet) > 0:
+                self.translation.facet.append('&')
+            self.translation.facet.append('filter_doctype_facet_hier_fq_doctype=AND')
+            self.translation.facet.append('&filter_doctype_facet_hier_fq_doctype=' +
+                                          urllib.quote_plus('doctype_facet_hier:"0/Article"'))
             # only include article journals
             self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_doctype}') + \
                                            '&fq_doctype=(' + urllib.quote_plus('doctype_facet_hier:"0/Article"') + ')')
@@ -966,6 +1013,8 @@ class ClassicSearchRedirectView(Resource):
         # consider arXiv only if other dbs are not selected
         filter = urllib.unquote(''.join(self.translation.filter))
         if 'database:"astronomy"' in filter or 'database:"physics"' in filter:
+            self.translation.warning_message.append(
+                urllib.quote('if either or both astronomy and physics databases are selected, arXiv database is ignored'))
             return
         if self.validate_arxiv_sel(value):
             # if all entries are valid include them, oring them
