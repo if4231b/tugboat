@@ -882,7 +882,7 @@ class TestSearchParametersTranslation(TestCase):
                          '&filter_database_fq_database=database:"astronomy"' +
                          '&q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&warning_message=' + urllib.quote('if either or both astronomy and physics databases are selected, arXiv database is ignored') + '/',
+                         '&warning_message=' + urllib.quote('when the astronomy or physics databases are selected, the arXiv selection is ignored') + '/',
                          search)  # astronomy only
 
     def test_ref_stems(self):

@@ -1014,7 +1014,7 @@ class ClassicSearchRedirectView(Resource):
         filter = urllib.unquote(''.join(self.translation.filter))
         if 'database:"astronomy"' in filter or 'database:"physics"' in filter:
             self.translation.warning_message.append(
-                urllib.quote('if either or both astronomy and physics databases are selected, arXiv database is ignored'))
+                urllib.quote('when the astronomy or physics databases are selected, the arXiv selection is ignored'))
             return
         if self.validate_arxiv_sel(value):
             # if all entries are valid include them, oring them
