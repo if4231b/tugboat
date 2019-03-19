@@ -874,16 +874,17 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('q=property:(' + urllib.quote("EPRINT_OPENACCESS") + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
-        req.args = MultiDict([('db_key', 'AST'), ('arxiv_sel', 'cs'), ('arxiv_sel', 'physics')])
-        req.args.update(self.append_defaults())
-        view = ClassicSearchRedirectView()
-        search = view.translate(req)
-        self.assertEqual('filter_database_fq_database=OR' +
-                         '&filter_database_fq_database=database:"astronomy"' +
-                         '&q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&warning_message=' + urllib.quote('when the astronomy or physics databases are selected, the arXiv selection is ignored') + '/',
-                         search)  # astronomy only
+        # 3/19/2019 remove the warning, as per Alberto.
+        # req.args = MultiDict([('db_key', 'AST'), ('arxiv_sel', 'cs'), ('arxiv_sel', 'physics')])
+        # req.args.update(self.append_defaults())
+        # view = ClassicSearchRedirectView()
+        # search = view.translate(req)
+        # self.assertEqual('filter_database_fq_database=OR' +
+        #                  '&filter_database_fq_database=database:"astronomy"' +
+        #                  '&q=*:*&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
+        #                  '&sort=' + urllib.quote('date desc, bibcode desc') +
+        #                  '&warning_message=' + urllib.quote('when the astronomy or physics databases are selected, the arXiv selection is ignored') + '/',
+        #                  search)  # astronomy only
 
     def test_ref_stems(self):
         """test ref_stems"""
