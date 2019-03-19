@@ -203,7 +203,7 @@ class ClassicSearchRedirectView(Resource):
             current_app.logger.info('Classic search redirect received data, headers: {}'.format(request.headers))
             bbb_url=current_app.config['BUMBLEBEE_URL']
             bbb_query = self.translate(request)
-            redirect_url = bbb_url + '/#search/'+ bbb_query
+            redirect_url = bbb_url + '#search/'+ bbb_query
             current_app.logger.info('translated classic {} to bumblebee {}, {}'.format(request, bbb_query, redirect_url))
             # golnaz 3/11/2018
             # while testing and using curl to see the build url after redirect call, noticed that url gets html encoded,
@@ -1010,12 +1010,13 @@ class ClassicSearchRedirectView(Resource):
         value = args.pop('arxiv_sel', None)
         if value is None:
             return
-        # consider arXiv only if other dbs are not selected
-        filter = urllib.unquote(''.join(self.translation.filter))
-        if 'database:"astronomy"' in filter or 'database:"physics"' in filter:
-            self.translation.warning_message.append(
-                urllib.quote('when the astronomy or physics databases are selected, the arXiv selection is ignored'))
-            return
+        # 3/19/2019 remove the warning, as per Alberto.
+        # # consider arXiv only if other dbs are not selected
+        # filter = urllib.unquote(''.join(self.translation.filter))
+        # if 'database:"astronomy"' in filter or 'database:"physics"' in filter:
+        #     self.translation.warning_message.append(
+        #         urllib.quote('when the astronomy or physics databases are selected, the arXiv selection is ignored'))
+        #     return
         if self.validate_arxiv_sel(value):
             # if all entries are valid include them, oring them
             entry = value.split(',')
