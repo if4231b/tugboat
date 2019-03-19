@@ -342,7 +342,7 @@ class ClassicSearchRedirectView(Resource):
             match = re.findall('\^(.*)\$', ' '.join(authors))
             # yes
             if match:
-                search = 'author:"' + match[0] + '" and author_count:1'
+                search = '(author:"' + match[0] + '" and author_count:1)'
                 self.translation.search.append(search)
             else:
                 search += urllib.quote(author_field) + '('
@@ -1044,13 +1044,29 @@ class ClassicSearchRedirectView(Resource):
         # not validating, just pass it to BBB, if any bibstem has been specified
         ref_stems = ''
         if len(value) > 0:
-            entry = value.split(',')
-            for e in entry:
-                if len(ref_stems) > 0:
-                    ref_stems += ' OR '
-                ref_stems += urllib.quote('"' + e + '"')
-            if len(ref_stems) > 0:
-                self.translation.search.append('bibstem:(' + ref_stems + ')')
+            match = re.findall('([-+]*[A-Za-z]{2,5})', value)
+            # yes
+            if match:
+                ref_stems_positive = ''
+                ref_stems_negative = ''
+                for e in match:
+                    if e.startswith('-'):
+                        if len(ref_stems_negative) > 0:
+                            ref_stems_negative += ' OR '
+                        ref_stems_negative += urllib.quote('"' + e[1:] + '"')
+                    else:
+                        if len(ref_stems_positive) > 0:
+                            ref_stems_positive += ' OR '
+                        if e.startswith('+'):
+                            ref_stems_positive += urllib.quote('"' + e[1:] + '"')
+                        else:
+                            ref_stems_positive += urllib.quote('"' + e + '"')
+                if len(ref_stems_positive) > 0 and len(ref_stems_negative) > 0:
+                    self.translation.search.append('bibstem:(' + ref_stems_positive + ') AND ' + '-bibstem:(' + ref_stems_negative + ')')
+                elif len(ref_stems_positive) > 0:
+                    self.translation.search.append('bibstem:(' + ref_stems_positive + ')')
+                elif len(ref_stems_negative) > 0:
+                    self.translation.search.append('-bibstem:(' + ref_stems_negative + ')')
 
     @staticmethod
     def classic_field_to_array(value):
