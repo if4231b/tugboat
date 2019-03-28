@@ -1045,7 +1045,8 @@ class ClassicSearchRedirectView(Resource):
         # not validating, just pass it to BBB, if any bibstem has been specified
         ref_stems = ''
         if len(value) > 0:
-            match = re.findall('([-+]*[A-Za-z]{2,5})', value)
+            # there is A&A, GCN1, CLic2, JPhy3, JPhy4
+            match = re.findall('([-+]*[A-Za-z&1-4]{2,5})', value)
             # yes
             if match:
                 ref_stems_positive = ''
