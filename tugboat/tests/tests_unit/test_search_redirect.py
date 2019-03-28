@@ -921,5 +921,13 @@ class TestSearchParametersTranslation(TestCase):
                          '-bibstem:(' + urllib.quote('"AAS"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
 
+        req.args = MultiDict([('ref_stems', 'A&A, GCN1, -CLic2, JPhy3, -JPhy4')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=bibstem:(' + urllib.quote('"A&A"') + ' OR ' +  urllib.quote('"GCN1"') + ' OR ' +  urllib.quote('"JPhy3"') + ') AND ' +
+                         '-bibstem:(' + urllib.quote('"CLic2"') + ' OR ' +  urllib.quote('"JPhy4"') + ')' +
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
