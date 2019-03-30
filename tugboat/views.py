@@ -355,7 +355,7 @@ class ClassicSearchRedirectView(Resource):
                     self.translation.search.append('AND')
                 self.translation.search.append(search)
                 if len(authors) > 1 and logic == 'OR':
-                    self.translation.warning_message.append(urllib.quote('author search terms combined with AND rather than OR'))
+                    self.translation.warning_message.append(urllib.quote('AUTHOR_ANDED_WARNING'))
 
     def translate_simple(self, args, classic_param, bbb_param):
         """process easy to translate fields like title
@@ -472,7 +472,7 @@ class ClassicSearchRedirectView(Resource):
             date = sum(d > 0 for d in [start_year,start_month,start_day])
             offset = sum(d < 0 for d in [start_year,start_month,start_day])
             if date > 0 and offset > 0:
-                self.translation.error_message.append('can not combine a date and offset (negative value) for the Entry Date')
+                self.translation.error_message.append('ENTRY_DATE_OFFSET_ERROR')
                 return None
             # if offset has been specified, get current date, subtract the offset, turn into string and return
             if offset > 0:
@@ -487,7 +487,7 @@ class ClassicSearchRedirectView(Resource):
                 start_day = start_day if start_day != 0 else 1
                 return '{:04d}-{:02d}-{:02d}'.format(start_year, start_month, start_day)
         except:
-            self.translation.error_message.append('found a non numeric value in the Entry Date')
+            self.translation.error_message.append('ENTRY_DATE_NON_NUMERIC_ERROR')
             return None
 
     def translate_entry_date_end(self, args):
@@ -514,7 +514,7 @@ class ClassicSearchRedirectView(Resource):
             date = sum(d > 0 for d in [end_year,end_month,end_day])
             offset = sum(d < 0 for d in [end_year,end_month,end_day])
             if date > 0 and offset > 0:
-                self.translation.error_message.append('can not combine a date and offset (negative value) for the Entry Date')
+                self.translation.error_message.append('ENTRY_DATE_OFFSET_ERROR')
                 return None
             # if offset has been specified, get current date, subtract the offset, turn into string and return
             if offset > 0:
@@ -535,7 +535,7 @@ class ClassicSearchRedirectView(Resource):
                     (datetime.now().day if end_year == datetime.now().year else calendar.monthrange(end_year, end_month)[1])
                 return '{:04d}-{:02d}-{:02d}'.format(end_year, end_month, end_day)
         except:
-            self.translation.error_message.append('found a non numeric value in the Entry Date')
+            self.translation.error_message.append('ENTRY_DATE_NON_NUMERIC_ERROR')
             return None
 
     def translate_entry_date(self, args):
@@ -607,7 +607,7 @@ class ClassicSearchRedirectView(Resource):
                                                '&fq_database=(' + urllib.quote(db_key) + ')')
         else:
             # unrecognizable value
-            self.translation.error_message.append(urllib.quote('Invalid database from classic {}'.format(value)))
+            self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
     def translate_results_subset(self, args):
         """subset/pagination currently not supported by bumblebee
@@ -649,7 +649,7 @@ class ClassicSearchRedirectView(Resource):
             self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
                                            '&fq_property=(' + urllib.quote('property:("not refereed")') + ')')
         else:
-            self.translation.error_message.append(urllib.quote('Invalid value for jou_pick: {}'.format(jou_pick)))
+            self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
     def translate_data_entries(self, args):
         """ Convert all classic data entries search related parameters to ads/bumblebee """
@@ -691,7 +691,7 @@ class ClassicSearchRedirectView(Resource):
                     search.append(urllib.quote(BBB))
                 else:
                     # unrecognizable value
-                    self.translation.error_message.append(urllib.quote('Invalid value for {}: {}'.format(classic, value)))
+                    self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
         if len(search) == 1:
             self.translation.search.append(''.join(search))
         elif len(search) > 1:
@@ -716,7 +716,7 @@ class ClassicSearchRedirectView(Resource):
             operator = 'NOT'
         else:
             operator = None
-            self.translation.error_message.append(urllib.quote('Invalid value for data_and: {}'.format(data_and)))
+            self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
         return operator
 
     def validate_group_sel(self, group_sel):
@@ -759,7 +759,7 @@ class ClassicSearchRedirectView(Resource):
                         '&fq_bibgroup_facet=(' + urllib.quote_plus('bibgroup_facet:({})'.format(group_sel)) + ')')
             else:
                 # unrecognizable value
-                self.translation.error_message.append(urllib.quote('Invalid value for group_sel: {}'.format(value)))
+                self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
     def translate_group_and(self, args):
         """ set group entries operator """
@@ -777,7 +777,7 @@ class ClassicSearchRedirectView(Resource):
             operator = 'AND'
         else:
             operator = None
-            self.translation.error_message.append(urllib.quote('Invalid value for group_and: {}'.format(group_and)))
+            self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
         return operator
 
     def translate_return_req(self, args):
@@ -792,7 +792,7 @@ class ClassicSearchRedirectView(Resource):
         elif return_req == 'result':
             pass
         else:
-            self.translation.error_message.append(urllib.quote('Invalid value for return_req({}), should be "result"'.format(return_req)))
+            self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
     def translate_article_sel(self, args):
         article_sel = args.pop('article_sel', None)
@@ -812,7 +812,7 @@ class ClassicSearchRedirectView(Resource):
             self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_doctype}') + \
                                            '&fq_doctype=(' + urllib.quote_plus('doctype_facet_hier:"0/Article"') + ')')
         else:
-            self.translation.error_message.append(urllib.quote('Invalid value for article_sel: {}'.format(article_sel)))
+            self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
     def translate_qsearch(self, args):
         """translate qsearch parameter from single input form on classic_w_BBB_button.html
@@ -866,7 +866,7 @@ class ClassicSearchRedirectView(Resource):
                 return
 
         # unrecognizable value
-        self.translation.error_message.append(urllib.quote('Invalid value for sort: {}'.format(value)))
+        self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
     def translate_to_ignore(self, args):
         """ remove the fields that is being ignored in some cases an unprocessed message is issued """
@@ -1032,7 +1032,7 @@ class ClassicSearchRedirectView(Resource):
                 self.translation.search.append('keyword:(' + urllib.quote(arxiv_sel) + ')')
         else:
             # unrecognizable value
-            self.translation.error_message.append(urllib.quote('Invalid value for arxiv_sel: {}'.format(value)))
+            self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
     def translate_ref_stems(self, args):
         """
