@@ -235,7 +235,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '/', search) # general only
+                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '&unprocessed_parameter=' + 'db_key' + '/', search) # general only
 
     def test_article_sel(self):
         """article_sel to property:article"""
@@ -256,7 +256,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '/', search)
+                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '&unprocessed_parameter=' + 'article_sel' + '/', search)
 
     def test_data_link(self):
         """data_link to property:data"""
@@ -754,7 +754,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '/', search)
+                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '&unprocessed_parameter=' + 'abstract' + '/', search)
 
     def test_group_and(self):
         """test group_and"""
@@ -797,21 +797,21 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '/', search)
+                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '&unprocessed_parameter=' + 'group_and' + '/', search)
 
         req.args = MultiDict([('group_and', 'YES'), ('group_sel', 'foo')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '/', search)
+                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '&unprocessed_parameter=' + 'group_sel' + '/', search)
 
         req.args = MultiDict([('group_and', 'YES'), ('group_sel', '')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '/', search)
+                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '&unprocessed_parameter=' + 'group_sel' + '/', search)
 
     def test_sort(self):
         """test sort"""
@@ -835,7 +835,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '/', search)
+        self.assertEqual('q=*:*' + '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '&unprocessed_parameter=' + 'sort' + '/', search)
 
     def test_arxiv_sel(self):
         """test arxiv_sel"""
@@ -855,14 +855,14 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + \
-                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '/', search)
+                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '&unprocessed_parameter=' + 'arxiv_sel' + '/', search)
 
         req.args = MultiDict([('arxiv_sel', 'ADS')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + \
-                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '/', search)
+                         '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '&unprocessed_parameter=' + 'arxiv_sel' + '/', search)
 
         req.args = MultiDict([('arxiv_sel', 'astro-ph'), ('arxiv_sel', 'cond-mat'), ('arxiv_sel', 'cs'), ('arxiv_sel', 'gr-qc'),
                               ('arxiv_sel', 'hep-ex'), ('arxiv_sel', 'hep-lat'), ('arxiv_sel', 'hep-ph'), ('arxiv_sel', 'hep-th'),
