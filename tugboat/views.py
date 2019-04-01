@@ -608,6 +608,8 @@ class ClassicSearchRedirectView(Resource):
         else:
             # unrecognizable value
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+            self.translation.unprocessed_fields.append('db_key')
+
 
     def translate_results_subset(self, args):
         """subset/pagination currently not supported by bumblebee
@@ -650,6 +652,8 @@ class ClassicSearchRedirectView(Resource):
                                            '&fq_property=(' + urllib.quote('property:("not refereed")') + ')')
         else:
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+            self.translation.unprocessed_fields.append('jou_pick')
+
 
     def translate_data_entries(self, args):
         """ Convert all classic data entries search related parameters to ads/bumblebee """
@@ -692,6 +696,8 @@ class ClassicSearchRedirectView(Resource):
                 else:
                     # unrecognizable value
                     self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+                    self.translation.unprocessed_fields.append(classic)
+
         if len(search) == 1:
             self.translation.search.append(''.join(search))
         elif len(search) > 1:
@@ -717,6 +723,7 @@ class ClassicSearchRedirectView(Resource):
         else:
             operator = None
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+            self.translation.unprocessed_fields.append('data_and')
         return operator
 
     def validate_group_sel(self, group_sel):
@@ -760,6 +767,7 @@ class ClassicSearchRedirectView(Resource):
             else:
                 # unrecognizable value
                 self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+                self.translation.unprocessed_fields.append('group_sel')
 
     def translate_group_and(self, args):
         """ set group entries operator """
@@ -778,6 +786,8 @@ class ClassicSearchRedirectView(Resource):
         else:
             operator = None
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+            self.translation.unprocessed_fields.append('group_and')
+
         return operator
 
     def translate_return_req(self, args):
@@ -793,6 +803,8 @@ class ClassicSearchRedirectView(Resource):
             pass
         else:
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+            self.translation.unprocessed_fields.append('return_req')
+
 
     def translate_article_sel(self, args):
         article_sel = args.pop('article_sel', None)
@@ -813,6 +825,8 @@ class ClassicSearchRedirectView(Resource):
                                            '&fq_doctype=(' + urllib.quote_plus('doctype_facet_hier:"0/Article"') + ')')
         else:
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+            self.translation.unprocessed_fields.append('article_sel')
+
 
     def translate_qsearch(self, args):
         """translate qsearch parameter from single input form on classic_w_BBB_button.html
@@ -867,6 +881,7 @@ class ClassicSearchRedirectView(Resource):
 
         # unrecognizable value
         self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+        self.translation.unprocessed_fields.append('sort')
 
     def translate_to_ignore(self, args):
         """ remove the fields that is being ignored in some cases an unprocessed message is issued """
@@ -972,8 +987,8 @@ class ClassicSearchRedirectView(Resource):
                     if dict_weights_of_type[type] not in not_default:
                         not_default.append(dict_weights_of_type[type])
         if len(not_default) > 0:
-            self.translation.unprocessed_fields.append('The following search settings have been ignored '
-                                                       'by the query translator: {}.'.format(', '.join(not_default)))
+            for err in not_default:
+                self.translation.unprocessed_fields.append(err)
 
 
     def validate_arxiv_sel(self, arxiv_sel):
@@ -1033,6 +1048,8 @@ class ClassicSearchRedirectView(Resource):
         else:
             # unrecognizable value
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+            self.translation.unprocessed_fields.append('arxiv_sel')
+
 
     def translate_ref_stems(self, args):
         """
