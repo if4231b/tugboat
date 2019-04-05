@@ -1098,9 +1098,9 @@ class ClassicSearchRedirectView(Resource):
             # remove any whitespace before +/- if any
             values[i] = re.sub(r"^\s+", "", values[i], flags=re.UNICODE)
             # now remove +/- if any, note the -
-            values[i] = values[i].replace('+', '')
+            values[i] = re.sub(r"^\+", "", values[i], flags=re.UNICODE)
             if values[i].startswith('-'):
-                values[i] = values[i].replace('-', '')
+                values[i] = re.sub(r"^\-", "", values[i], flags=re.UNICODE)
                 negate = True
             # remove any whitespace before/after the words
             values[i] = re.sub("^\s+|\s+$", "", values[i], flags=re.UNICODE)
