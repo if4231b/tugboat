@@ -53,11 +53,11 @@ class TestSearchParametersTranslation(TestCase):
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          author_search) # single author no quotes
 
-        req.args = MultiDict([('author', urllib.quote('"Huchra,+John"'))])
+        req.args = MultiDict([('author', urllib.quote('Huchra\r\n-Huchra,John'))])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra,John"') + ')' +
+        self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra" AND -"Huchra,John"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
                          author_search) # single author with quotes
 
