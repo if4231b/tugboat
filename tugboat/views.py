@@ -1097,11 +1097,10 @@ class ClassicSearchRedirectView(Resource):
             negate = False
             # remove any whitespace before +/- if any
             values[i] = re.sub(r"^\s+", "", values[i], flags=re.UNICODE)
-            # now remove +/- if any, note the -
-            values[i] = values[i].replace('+', '')
-            if values[i].startswith('-'):
-                values[i] = values[i].replace('-', '')
-                negate = True
+            # now remove +/- if any, note the negative to attach it back
+            if values[i].startswith('+') or values[i].startswith('-'):
+                negate = values[i].startswith('-')
+                values[i] = values[i][1:]
             # remove any whitespace before/after the words
             values[i] = re.sub("^\s+|\s+$", "", values[i], flags=re.UNICODE)
             # if not an empty string and if not quoted, then quoted
@@ -1125,15 +1124,14 @@ class ClassicSearchRedirectView(Resource):
             # remove any whitespace before +/- if any
             values[i] = re.sub(r"^\s+", "", values[i], flags=re.UNICODE)
             # now remove +/- if any, note the -
-            values[i] = values[i].replace('+', '')
-            if values[i].startswith('-'):
-                values[i] = values[i].replace('-', '')
-                negate = True
+            if values[i].startswith('+') or values[i].startswith('-'):
+                negate = values[i].startswith('-')
+                values[i] = values[i][1:]
             # remove any whitespace before/after the words
             values[i] = re.sub("^\s+|\s+$", "", values[i], flags=re.UNICODE)
             # if not an empty string
             if len(values[i]) > 0:
-                values[i] = values[i].encode('utf8')
+                values[i] = ('-' if negate else '') + values[i].encode('utf8')
         # remove any empty strings
         values = filter(None, values)
         # concatenate and return in a list with one element
@@ -1222,7 +1220,7 @@ class BumblebeeView(Resource):
         query_id = r.json()['qid']
 
         # Formulate the url based on the query id
-        redirect_url = '{BBB_URL}/#search/q=*%3A*&__qid={query_id}'.format(
+        redirect_url = '{BBB_URL}search/q=*%3A*&__qid={query_id}'.format(
             BBB_URL=current_app.config['BUMBLEBEE_URL'],
             query_id=query_id
         )
