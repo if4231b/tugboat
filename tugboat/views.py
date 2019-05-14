@@ -358,7 +358,7 @@ class ClassicSearchRedirectView(Resource):
                     self.translation.warning_message.append(urllib.quote('AUTHOR_ANDED_WARNING'))
 
     def translate_simple(self, args, classic_param, bbb_param):
-        """process easy to translate fields like title
+        """process easy to translate fields including title, abstract, and object
 
         simply change name of parameter and use boolean connector
         """
@@ -370,16 +370,24 @@ class ClassicSearchRedirectView(Resource):
         # one lone parameter should hold all authors from classic
         classic_str = args.pop(classic_param, None)
         if classic_str:
+            # note that only for object we allow multiple tokens and apply connector
+            # hence for title and abstract no connector is applied
             if classic_param == 'object':
                 terms = self.classic_field_to_array(classic_str)
             else:
                 terms = self.classic_field_to_string(classic_str)
+                # issue a warning for title and abstract if multiple words are specified and OR is selected
+                if len(''.join(terms).split(' ')) > 1 and logic == 'OR':
+                    if classic_param == 'title':
+                        self.translation.warning_message.append(urllib.quote('TITLE_ANDED_WARNING'))
+                    elif classic_param == 'text':
+                        self.translation.warning_message.append(urllib.quote('ABSTRACT_ANDED_WARNING'))
             search += urllib.quote(bbb_param + ':') + '('
             for term in terms:
                 search += urllib.quote(term + connector)
             search = search[:-len(urllib.quote(connector))]  # remove final connector
             search += ')'
-            # fields in search are ANDed as of 5/9
+            # multiple fields in search are ANDed as of 5/9/2018
             if len(self.translation.search) > 0:
                 self.translation.search.append('AND')
             self.translation.search.append(search)
