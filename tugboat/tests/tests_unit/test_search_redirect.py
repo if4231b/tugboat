@@ -104,38 +104,48 @@ class TestSearchParametersTranslation(TestCase):
         req.args = MultiDict([('object', urllib.quote('M31'))])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
-        object_search = view.translate(req)
+        search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('"M31"') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', object_search) # single object
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # single object
 
         req.args = MultiDict([('object', urllib.quote('M31\r\nM32'))])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
-        object_search = view.translate(req)
+        search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('"M31" AND "M32"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
-                         object_search) # objects, newline separator
+                         search) # objects, newline separator
 
         req.args = MultiDict([('object', urllib.quote('M31;M32;M33'))])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
-        object_search = view.translate(req)
+        search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('object:') + '(' + urllib.quote('"M31" AND "M32" AND "M33"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '/',
-                         object_search) # object, semicolor separator
+                         search) # object, semicolor separator
 
     def test_title(self):
         """title field"""
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
+
         req.args = MultiDict([('title', urllib.quote('ADS'))])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
-        object_search = view.translate(req)
+        search = view.translate(req)
         self.assertEqual('q=' +
                          urllib.quote('title:') + '(' + urllib.quote('ADS') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', object_search) # single object
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # single object
+
+        req.args = MultiDict([('title', urllib.quote('ADS Kurtz')), ('ttl_logic', 'OR')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' +
+                         urllib.quote('title:') + '(' + urllib.quote('ADS Kurtz') + ')' +
+                         '&sort=' + urllib.quote('date desc, bibcode desc') +
+                         '&warning_message=' + 'TITLE_ANDED_WARNING' + '/', search) # single object
 
     def test_text(self):
         """text search"""
@@ -145,10 +155,19 @@ class TestSearchParametersTranslation(TestCase):
         req.args = MultiDict([('text', urllib.quote('M31'))])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
-        object_search = view.translate(req)
+        search = view.translate(req)
         self.assertEqual('q=' +
                          urllib.quote('abs:') + '(' + urllib.quote('M31') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', object_search) # single object
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '/', search) # single object
+
+        req.args = MultiDict([('text', urllib.quote('foo bar')), ('txt_logic', 'OR')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' +
+                         urllib.quote('abs:') + '(' + urllib.quote('foo bar') + ')' +
+                         '&sort=' + urllib.quote('date desc, bibcode desc') +
+                         '&warning_message=' + 'ABSTRACT_ANDED_WARNING' + '/', search) # single object
 
     def test_pubdate(self):
         """test pubdate"""
@@ -727,6 +746,7 @@ class TestSearchParametersTranslation(TestCase):
         req = Request('get', 'http://test.test?')
         req.prepare()
         req.mimetype = None
+
         req.args = MultiDict([('data_and', 'YES'), ('abstract', 'YES')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
