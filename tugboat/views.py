@@ -65,6 +65,7 @@ class TranslationValue():
         self.unprocessed_fields = []
         self.sort = ''
         self.facet = []
+        self.params = ''
 
 class ClassicSearchRedirectView(Resource):
     """
@@ -113,6 +114,7 @@ class ClassicSearchRedirectView(Resource):
 
             # implementations for the following just create errors
             # perhaps because there is no ads/bumbleebee support yet
+            # 6/11/2019 pass it in for the unclassic functionality
             'nr_to_return': fields.Field(required=False),
             'start_nr': fields.Field(required=False),
 
@@ -203,7 +205,7 @@ class ClassicSearchRedirectView(Resource):
             current_app.logger.info('Classic search redirect received data, headers: {}'.format(request.headers))
             bbb_url=current_app.config['BUMBLEBEE_URL']
             bbb_query = self.translate(request)
-            redirect_url = bbb_url + '#search/'+ bbb_query
+            redirect_url = bbb_url + 'search/'+ bbb_query
             current_app.logger.info('translated classic {} to bumblebee {}, {}'.format(request, bbb_query, redirect_url))
             # golnaz 3/11/2018
             # while testing and using curl to see the build url after redirect call, noticed that url gets html encoded,
@@ -274,6 +276,8 @@ class ClassicSearchRedirectView(Resource):
             solr_query += '&fq=' + '&fq='.join(self.translation.filter)
         if len(self.translation.sort) > 0:
             solr_query += '&sort=' + self.translation.sort
+        if len(self.translation.params) > 0:
+            solr_query += self.translation.params
         if len(self.translation.error_message) > 0:
             solr_query += '&error_message=' + '&error_message='.join(self.translation.error_message)
         if len(self.translation.warning_message):
@@ -622,9 +626,16 @@ class ClassicSearchRedirectView(Resource):
     def translate_results_subset(self, args):
         """subset/pagination currently not supported by bumblebee
 
-        provide error message if pagination request is present"""
+        provide error message if pagination request is present
+
+        6/11/2019 in the process of implementing unclassic we are adding these in """
         number_to_return = args.pop('nr_to_return', None)
         start_nr = args.pop('start_nr', None)
+        if number_to_return:
+            self.translation.params += '&rows=%s'%(number_to_return)
+        if start_nr:
+            self.translation.params += '&start=%s'%(start_nr)
+
         # golnaz: hold off for now
         # if number_to_return or start_nr:
         #     self.translation.error_message.append(urllib.quote('Result subset/pagination is not supported'))
@@ -941,7 +952,9 @@ class ClassicSearchRedirectView(Resource):
             if key == 'mail_link' and set_value == None:
                 continue
             # only produce a message if other than default
-            if key == 'data_type' and set_value == 'SHORT':
+            # 6/11/2019 lets not ignore this anymore
+            if key == 'data_type' and set_value:
+                self.translation.params += '&format=' + set_value
                 continue
             # if set_value == None:
             #     continue
