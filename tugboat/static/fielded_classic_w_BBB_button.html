@@ -1,4 +1,6 @@
 
+
+
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
 "http://www.w3.org/TR/REC-html40/loose.dtd">
 <HTML>
@@ -61,7 +63,7 @@ function hl(a){
   } else {
     df = document.getElementById('object1');
     df.innerHTML="";
-  }
+.  }
 }
 function handlerMM(e){
   if (!e) e = window.event;
@@ -222,12 +224,19 @@ document.write("<input type=\"hidden\" name=\"forward\" value=\"" + absadr + "\"
 <form method="GET" action="http://adsabs.harvard.edu/cgi-bin/nph-abs_connect" name="abs_connect">
 </NOSCRIPT>
 <div align="center">
+<A HREF="https://adsabs.github.io/help/whats_new/">What's New</a>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://adsabs.harvard.edu/user_feedback.html">Feedback</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="https://ui.adsabs.harvard.edu/classic-form"">Basic&nbsp;Search</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://adsabs.harvard.edu/cgi-bin/pref_set">Preferences</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="https://adsabs.github.io/help/faq/">FAQ</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="https://adsabs.github.io/help/">HELP</A></b></h3>
+<!-- Hide old links
 <h3><b><A HREF="http://adsabs.harvard.edu/abs_doc/site_map/">Sitemap</a>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://adsabs.harvard.edu/abs_doc/whatsnew.html">What's New</a>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://adsabs.harvard.edu/user_feedback.html">Feedback</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://adsabs.harvard.edu/basic_search.html">Basic&nbsp;Search</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://adsabs.harvard.edu/cgi-bin/pref_set">Preferences</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://adsabs.harvard.edu/abs_doc/faq.html">FAQ</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://adsabs.harvard.edu/abs_doc/help_pages/">HELP</A></b></h3>
-<div style="background-color:#CCF; padding:10px 30px; text-align:center; font-weight:bold;">Need a more powerful search?  Try <a href="https://ui.adsabs.harvard.edu" style="color:blue;">ADS Bumblebee</a>!</div> <p>
-<hr><input style="background-color: #55bbff; color: #000000"
-  type="submit" value=" Send Query to Classic">&nbsp;&nbsp;&nbsp; <input
+
+-->
+<div style="background-color:#CCF; padding:10px 30px; text-align:center; font-weight:bold;">Welcome to the new Unclassic! </div> <p>
+<hr>
+<!--<input style="background-color: #55bbff; color: #000000"
+  type="submit" value=" Send Query to Classic">&nbsp;&nbsp;&nbsp;
+-->
+ <input
   style="background-color: #6084D9; color: #ffffff" type="submit" name="foobar"
-  value=" Send Query to ADS " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
+  value=" Send Query to Classic " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
 <br>Databases to query: 
 <input type="checkbox" checked name="db_key" value="AST">&nbsp;<a href="/tugboat/adsabs" onMouseOver="ql(0,-50)" onMouseOut="hl(-50)">Astronomy</a>&nbsp;&nbsp;&nbsp;<input type="checkbox"  name="db_key" value="PHY">&nbsp;<a href="/tugboat/physics" onMouseOver="ql(1,-50)" onMouseOut="hl(-50)">Physics</a>&nbsp;&nbsp;&nbsp;<input type="checkbox" checked name="db_key" value="PRE">&nbsp;<a href="/tugboat/arxiv" onMouseOver="ql(2,-50)" onMouseOut="hl(-50)">arXiv e-prints</a>&nbsp;&nbsp;&nbsp;</div>
 <input type="hidden" name="qform" value="AST"><input type="hidden" name="arxiv_sel" value="astro-ph">
@@ -267,15 +276,15 @@ document.write("<input type=\"hidden\" name=\"forward\" value=\"" + absadr + "\"
 Return <input name="nr_to_return" size="5" value="200"> items starting with number <input name="start_nr" size="5" value="1"></pre>
 </div>
 <div align="center">
-<h3>Search within articles using <a href="https://ui.adsabs.harvard.edu/">ADS Bumblebee</a></h3>
+<h3><a href="https://ui.adsabs.harvard.edu/">Full text Search</a></h3>
 <h3><a href="http://myads.harvard.edu">myADS</a>: Personalized notification service</h3>
-<h3><a href="http://adsabs.harvard.edu/cgi-bin/nph-abs_connect?library">Private Library</a> and <a href="http://adsabs.harvard.edu/cgi-bin/nph-abs_connect?library=Recent">Recently read articles</a> for 59b04d70ab</h3>
-<hr><input style="background-color: #55bbff; color: #000000"
-  type="submit" value=" Send Query to Classic">&nbsp;&nbsp;&nbsp; <input
-  style="background-color: #6084D9; color: #ffffff" type="submit" name="foobar"
-  value=" Send Query to ADS " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
+<!-- Hide <h3><a href="http://adsabs.harvard.edu/cgi-bin/nph-abs_connect?library">Private Library</a> and <a href="http://adsabs.harvard.edu/cgi-bin/nph-abs_connect?library=Recent">Recently read articles</a> for 59b04d70ab</h3>
+-->
+<input 
+style="background-color: #6084D9; color: #ffffff" type="submit" name="foobar"
+  value=" Send Query to Classic " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
 </div>
-<hr><h4 align="center"><A HREF="http://adsabs.harvard.edu/bib_abs.html">Journal/Volume/Page</A>&nbsp;&nbsp; <A HREF="http://adsabs.harvard.edu/ast_toc.html">Current Journals</A>&nbsp;&nbsp; <A HREF="http://adsabs.harvard.edu/custom_toc.html">Unread Journals</A></h4>
+<hr><h4 align="center"><A HREF="https://ui.adsabs.harvard.edu/paper-form">Journal/Volume/Page</A></h4>
 <HR><H3 align="center"><A NAME="filters">FILTERS</A></H3><HR><pre>
 <B>Select References From:</B>
    <a name="jousel"><input type="radio" checked name="jou_pick" value="ALL"></a> <NOSCRIPT><A HREF="http://adsabs.harvard.edu/abs_doc/journal_abbr.html"></NOSCRIPT><SCRIPT language="JavaScript" type="text/javascript">document.write("<A HREF=\"#jousel\" onClick=\"ListOpener='abs_connect';window.open('http://adsabs.harvard.edu\/abs_doc\/journal_abbr.html', '_blank','WIDTH=800,HEIGHT=800,scrollbars,menubar,toolbar');\">");</SCRIPT>All bibliographic sources</A>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox"  name="article_sel" value="YES"> Select only <a href="http://adsabs.harvard.edu/abs_doc/help_pages/search.html#Select_References_From" onMouseOver="sa(-50)" onMouseOut="hl(-50)">articles</a>
@@ -313,17 +322,13 @@ Return <input name="nr_to_return" size="5" value="200"> items starting with numb
 <b>Entry Date:</b>
     Since: <input name="start_entry_day" size="3">     <input name="start_entry_mon" size="3">       <input name="start_entry_year" size="5">      Before: <input name="end_entry_day" size="3">     <input name="end_entry_mon" size="3">       <input name="end_entry_year" size="5">
           Day(DD) Month(MM) Year(YYYY)          Day(DD) Month(MM) Year(YYYY)
-
-<b>Min Score:</b> <input name="min_score" size="5">
-
 </pre>
-<div align="center"><input style="background-color: #55bbff; color: #000000"
-  type="submit" value=" Send Query to Classic">&nbsp;&nbsp;&nbsp; <input
-  style="background-color: #6084D9; color: #ffffff" type="submit" name="foobar"
-  value=" Send Query to ADS " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
-</div>
-<hr>
-<table align="center" width="100%"><tr><td><h3 align="center"><A NAME="Sorting">SORTING</a></h3>
+<!--<b>Min Score:</b> <input name="min_score" size="5">
+-->
+ <input style="background-color: #6084D9; color: #ffffff" type="submit" name="foob<!ar" value="Send Query to ADS " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">                                                     
+</div> 
+<hr>                                                                               
+<table align="center" width="100%"><tr><td><h3 align="center"<A NAME="Sorting">SORTING</a></h3>
 </td><td colspan="2"><h3 align="center">FORMAT</h3></td></tr><tr valign="top"><td><pre><input type="radio" checked name="sort" value="SCORE"> Sort by score
 <input type="radio"  name="sort" value="NORMSCORE"> Sort by <a href="http://adsabs.harvard.edu/abs_doc/help_pages/search.html#normscore">normalized score</a>
 <input type="radio"  name="sort" value="CITATIONS"> Sort by citation count
@@ -359,7 +364,7 @@ Return <input name="nr_to_return" size="5" value="200"> items starting with numb
 <input type="radio"  name="data_type" value="Link"> Link
 <input type="radio"  name="data_type" value="Custom"> Custom
 </pre></td></tr></table>
-<hr><h3 align="center"><A NAME="Settings">SETTINGS</a></h3><hr><pre>
+<!-- Delete not used any more <hr><h3 align="center"><A NAME="Settings">SETTINGS</a></h3><hr><pre>
 <b>                   Authors  Objects  Title  Abstract</b>
 </pre><HR><pre><a href="http://adsabs.harvard.edu/abs_doc/help_pages/search.html#andacross">Require Field</a>         <input type="checkbox"  name="aut_req" value="YES">       <input type="checkbox"  name="obj_req" value="YES">      <input type="checkbox"  name="ttl_req" value="YES">      <input type="checkbox"  name="txt_req" value="YES">
 <a href="http://adsabs.harvard.edu/abs_doc/help_pages/search.html#andacross">for Selection</a>
@@ -371,21 +376,21 @@ Return <input name="nr_to_return" size="5" value="200"> items starting with numb
 <a href="http://adsabs.harvard.edu/abs_doc/help_pages/search.html#useweight">Weighting</a>
 </pre><HR><pre><a href="http://adsabs.harvard.edu/abs_doc/help_pages/search.html#weightscore">Weighted</a>              <input type="checkbox"  name="aut_sco" value="YES">               <input type="checkbox" checked name="ttl_sco" value="YES">      <input type="checkbox" checked name="txt_sco" value="YES">
 <a href="http://adsabs.harvard.edu/abs_doc/help_pages/search.html#weightscore">Scoring</a>
+-->
 </pre>
-<div align="center">
-<hr><input style="background-color: #55bbff; color: #000000"
-  type="submit" value=" Send Query to Classic">&nbsp;&nbsp;&nbsp; <input
-  style="background-color: #6084D9; color: #ffffff" type="submit" name="foobar"
-  value=" Send Query to ADS " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
+<!-- <div align="center">
+ <input style="background-color: #6084D9; color: #ffffff" type="submit" name="foobar" value="Send Query to ADS " formaction="/tugboat/classicSearchRedirect">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Return Query Form">&nbsp;&nbsp;&nbsp;<input type="submit" name="return_req" value="Store Default Form">&nbsp;&nbsp;&nbsp;<input type="reset" value=" Clear ">
 </div>
+-->
 <input type="hidden" name="version" value="1">
 </form>
 <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.1.min.js">&nbsp;</script>
 <script type="text/javascript" src="http://adsabs.harvard.edu/abs_doc/classic_form_analytics.js"></script>
 <p>
-<center>
-<a href="http://adsabs.harvard.edu/">SAO/NASA ADS Homepage</a> | <a href="http://adsabs.harvard.edu/abs_doc/site_map/">ADS Sitemap</a> | <a href="http://adsabs.harvard.edu/abstract_service.html">Query Form</a> | <a href="http://adsabs.harvard.edu/basic_search.html">Basic Search</a> | <a href="http://adsabs.harvard.edu/cgi-bin/pref_set">Preferences</a> | <a href="http://adsabs.harvard.edu/abs_doc/help_pages/">HELP</a> | <a href="http://adsabs.harvard.edu/abs_doc/faq.html">FAQ</a>
-</center>
+<center><A HREF="https://adsabs.github.io/help/whats_new/">What's New</a>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://adsabs.harvard.edu/user_feedback.html">Feedback</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="https://ui.adsabs.harvard.edu/classic-form"">Basic&nbsp;Search</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://adsabs.harvard.edu/cgi-bin/pref_set">Preferences</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="https://adsabs.github.io/help/faq/">FAQ</A>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="https://adsabs.github.io/help/">HELP</A></b></h3>
+
+<!--<a href="http://adsabs.harvard.edu/">SAO/NASA ADS Homepage</a> | <a href="http://adsabs.harvard.edu/abs_doc/site_map/">ADS Sitemap</a> | <a href="http://adsabs.harvard.edu/abstract_service.html">Query Form</a> | <a href="http://adsabs.harvard.edu/basic_search.html">Basic Search</a> | <a href="http://adsabs.harvard.edu/cgi-bin/pref_set">Preferences</a> | <a href="http://adsabs.harvard.edu/abs_doc/help_pages/">HELP</a> | <a href="http://adsabs.harvard.edu/abs_doc/faq.html">FAQ</a>
+</center> -->
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
