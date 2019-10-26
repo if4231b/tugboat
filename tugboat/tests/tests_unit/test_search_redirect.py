@@ -1029,24 +1029,24 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc') +  '&error_message=UNABLE_DECIDE_QUERY_TYPE/', search)
+        self.assertEqual('q=*:*' +  '&error_message=UNABLE_DECIDE_QUERY_TYPE/', search)
 
         # missing params
         req.args = MultiDict([('query_type', 'ALSOREADS')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        print '....search', search
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc') +  '&error_message=MISSING_REQUIRED_PARAMETER/', search)
+        self.assertEqual('q=*:*' +  '&error_message=MISSING_REQUIRED_PARAMETER/', search)
 
         # when both author and title is supplied to query_type == 'PAPER' and db_key == 'AST'
         req.args = MultiDict([('query_type', 'PAPER'), ('db_key', 'AST'),
                               ('author', 'LU, JESSICA\r\nHOSEK, MATTHEW\r\nKEWLEY, LISA\r\nACCOMAZZI, ALBERTO\r\nKURTZ, MICHAEL'),
-                              ('title', '"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU')])
+                              ('title', '"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU'),
+                              ('start_year', '2019')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc') +  '&error_message=UNABLE_DECIDE_QUERY_TYPE/', search)
+        self.assertEqual('q=*:*' +  '&error_message=UNABLE_DECIDE_QUERY_TYPE/', search)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
