@@ -281,7 +281,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +
                          '&error_message=' + 'UNRECOGNIZABLE_VALUE' + '&unprocessed_parameter=' + 'article_sel' + '/', search)
 
     def test_data_link(self):
@@ -955,6 +955,98 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('q=bibstem:(' + urllib.quote('"A&A"') + ' OR ' +  urllib.quote('"GCN1"') + ' OR ' +  urllib.quote('"JPhy3"') + ') AND ' +
                          '-bibstem:(' + urllib.quote('"CLic2"') + ' OR ' +  urllib.quote('"JPhy4"') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)
+
+    def test_myads_query(self):
+        """test query_type"""
+        req = Request('get', 'http://test.test?')
+        req.prepare()
+        req.mimetype = None
+
+        # Daily arXiv query
+        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'DAILY_PRE'),
+                              ('arxiv_sel', 'astro-ph'), ('start_year', '2019'),
+                              ('title', '*+"nuclear star cluster"')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph) OR +"nuclear star cluster") entdate:["NOW-2DAYS" TO NOW] pubdate:[2019-00 TO *]') +
+                         '&sort=' + urllib.quote('score desc') + '/', search)
+
+        # Weekly citations query
+        req.args = MultiDict([('query_type', 'CITES'), ('author', 'LOCKHART, KELLY')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('citations(author:"LOCKHART, KELLY")') +
+                         '&sort=' + urllib.quote('score desc') +  '/', search)
+
+        # Weekly authors query
+        req.args = MultiDict([('query_type', 'PAPER'), ('db_key', 'AST'),
+                              ('author', 'LU, JESSICA\r\nHOSEK, MATTHEW\r\nKEWLEY, LISA\r\nACCOMAZZI, ALBERTO\r\nKURTZ, MICHAEL'),
+                              ('start_year', '2019')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["NOW-25DAYS" TO NOW] pubdate:[2019-00 TO *]') +
+                         '&sort=' + urllib.quote('score desc') + '/', search)
+
+        # Weekly keyword (recent papers) query
+        req.args = MultiDict([('query_type', 'PAPER'), ('db_key', 'AST'),
+                              ('title', '"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU'),
+                              ('start_year', '2019')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU entdate:["NOW-25DAYS" TO NOW] pubdate:[2019-00 TO *]') +
+                         '&sort=' + urllib.quote('entdate desc') +  '/', search)
+
+        # Weekly keyword (popular papers) query
+        req.args = MultiDict([('query_type', 'ALSOREADS'),
+                              ('title', '"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('trending("nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU)') +
+                         '&sort=' + urllib.quote('score desc') + '/', search)
+
+        # Weekly keyword (most cited) query
+        req.args = MultiDict([('query_type', 'REFS'),
+                              ('title', '"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('useful("nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU)') +
+                         '&sort=' + urllib.quote('score desc') + '/', search)
+
+    def test_myads_query_error(self):
+        """test query_type"""
+        req = Request('get', 'http://test.test?')
+        req.prepare()
+        req.mimetype = None
+
+        # undefined query_type
+        req.args = MultiDict([('query_type', 'error')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc') +  '&error_message=UNABLE_DECIDE_QUERY_TYPE/', search)
+
+        # missing params
+        req.args = MultiDict([('query_type', 'ALSOREADS')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        print '....search', search
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc') +  '&error_message=MISSING_REQUIRED_PARAMETER/', search)
+
+        # when both author and title is supplied to query_type == 'PAPER' and db_key == 'AST'
+        req.args = MultiDict([('query_type', 'PAPER'), ('db_key', 'AST'),
+                              ('author', 'LU, JESSICA\r\nHOSEK, MATTHEW\r\nKEWLEY, LISA\r\nACCOMAZZI, ALBERTO\r\nKURTZ, MICHAEL'),
+                              ('title', '"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc') +  '&error_message=UNABLE_DECIDE_QUERY_TYPE/', search)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

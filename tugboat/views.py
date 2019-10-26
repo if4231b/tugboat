@@ -194,7 +194,9 @@ class ClassicSearchRedirectView(Resource):
             'full_logic': fields.Str(required=False),
             'aff_logic': fields.Str(required=False),
 
-            }
+            # this is added for myads functionality
+            'query_type': fields.Str(required=False),
+        }
 
 
     def get(self):
@@ -246,6 +248,10 @@ class ClassicSearchRedirectView(Resource):
         Convert all classic search related parameters to ads/bumblebee
         """
         args = self.parse(request)
+
+        if args.get('query_type', None):
+            return self.translate_myads_queries(args)
+
         # functions to translate/process specific parameters
         # consider using reflection to obtain this list
         funcs = [self.translate_authors,
@@ -292,7 +298,6 @@ class ClassicSearchRedirectView(Resource):
         # add an extra slash for safari browser
         return solr_query + '/'
 
-
     @staticmethod
     def author_exact(args):
         """given an aut_xct value, is it true"""
@@ -321,6 +326,100 @@ class ClassicSearchRedirectView(Resource):
         if value is None or (isinstance(value, basestring) and len(value) == 0):
             return False
         return True
+
+    def translate_myads_queries(self, args):
+        """return query string for the six different """
+
+        query_type = args.pop('query_type', None)
+        db_key = args.pop('db_key', None)
+        # Daily arXiv query
+        if query_type == 'PAPERS' and db_key == 'DAILY_PRE':
+            arxiv_sel = args.pop('arxiv_sel', None)
+            title_str = args.pop('title', None)
+            start_year = args.pop('start_year', None)
+            if arxiv_sel and self.validate_arxiv_sel(arxiv_sel) and start_year and title_str:
+                # if all entries are valid include them, oring them
+                arxiv_class = '(' + ' OR '.join(['arxiv_class:' + c for c in arxiv_sel.split(',')]) + ')'
+                # need to parse title with special parser later
+                # for now if there is * at the beginning remove it
+                title = self.classic_field_to_string(title_str)[0].lstrip('*')
+                query_bibstem = 'bibstem:arxiv ({arxiv_class} OR {title})'.format(arxiv_class=arxiv_class, title=title)
+                query_date = 'entdate:["NOW-2DAYS" TO NOW] pubdate:[{start_year}-00 TO *]'.format(start_year=start_year)
+                daily_arxiv_query = '%s %s'%(query_bibstem, query_date)
+                query = 'q=' + urllib.quote(daily_arxiv_query)
+                sort = '&sort=' + urllib.quote('score desc')
+                return query + sort + '/'
+            self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
+
+        # Weekly citations query
+        elif query_type == 'CITES':
+            authors_str = args.pop('author', None)
+            if authors_str:
+                authors = self.classic_field_to_array(authors_str)
+                weekly_citation_query = 'citations(author:{authors})'.format(authors=' '.join(authors))
+                query = 'q=' + urllib.quote(weekly_citation_query)
+                sort = '&sort=' + urllib.quote('score desc')
+                return query + sort + '/'
+            self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
+
+        # Weekly authors query or Weekly keyword (recent papers) query
+        elif query_type == 'PAPER' and db_key == 'AST':
+            # decide how to proceed based on author or title parameters
+            authors_str = args.pop('author', None)
+            title_str = args.pop('title', None)
+            # one has to be empty
+            if not(authors_str and title_str):
+                start_year = args.pop('start_year', None)
+                # it is authors query
+                if authors_str and start_year:
+                    authors = self.classic_field_to_array(authors_str)
+                    author_query = ' OR '.join(['author:' + x for x in authors])
+                    weekly_authors_query = '{author_query} entdate:["NOW-25DAYS" TO NOW] pubdate:[{start_year}-00 TO *]'.format(author_query=author_query,
+                                                                                                                                start_year=start_year)
+                    query = 'q=' + urllib.quote(weekly_authors_query)
+                    sort = '&sort=' + urllib.quote('score desc')
+                    return query + sort + '/'
+                self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
+
+                # it is keyword query
+                if title_str and start_year:
+                    # need to parse title with special parser later
+                    title = self.classic_field_to_string(title_str)[0]
+                    weekly_keyword_query = '{title} entdate:["NOW-25DAYS" TO NOW] pubdate:[{start_year}-00 TO *]'.format(title=title,
+                                                                                                                         start_year=start_year)
+                    query = 'q=' + urllib.quote(weekly_keyword_query)
+                    sort = '&sort=' + urllib.quote('entdate desc')
+                    return query + sort + '/'
+                self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
+            self.translation.error_message.append('UNABLE_DECIDE_QUERY_TYPE')
+
+        # Weekly keyword (popular papers) query
+        elif query_type == 'ALSOREADS':
+            title_str = args.pop('title', None)
+            if title_str:
+                # need to parse title with special parser later
+                title = self.classic_field_to_string(title_str)[0]
+                weekly_keyword_query = 'trending({title})'.format(title=title)
+                query = 'q=' + urllib.quote(weekly_keyword_query)
+                sort = '&sort=' + urllib.quote('score desc')
+                return query + sort + '/'
+            self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
+
+        # Weekly keyword (most cited) query
+        elif query_type == 'REFS':
+            title_str = args.pop('title', None)
+            if title_str:
+                # need to parse title with special parser later
+                title = self.classic_field_to_string(title_str)[0]
+                weekly_keyword_query = 'useful({title})'.format(title=title)
+                query = 'q=' + urllib.quote(weekly_keyword_query)
+                sort = '&sort=' + urllib.quote('score desc')
+                return query + sort + '/'
+            self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
+
+        else:
+            self.translation.error_message.append('UNABLE_DECIDE_QUERY_TYPE')
+        return 'q=*:*&sort=' + urllib.quote('date desc') + '&error_message=' + '&error_message='.join(self.translation.error_message) + '/'
 
     def translate_authors(self, args):
         """return string with all author search elements
