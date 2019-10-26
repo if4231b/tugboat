@@ -988,6 +988,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["NOW-25DAYS" TO NOW] pubdate:[2019-00 TO *]') +
+                         '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Weekly keyword (recent papers) query
@@ -998,24 +999,27 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU entdate:["NOW-25DAYS" TO NOW] pubdate:[2019-00 TO *]') +
+                         '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('entdate desc') +  '/', search)
 
         # Weekly keyword (popular papers) query
-        req.args = MultiDict([('query_type', 'ALSOREADS'),
+        req.args = MultiDict([('query_type', 'ALSOREADS'), ('db_key', 'AST'),
                               ('title', '"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('trending("nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU)') +
+                         '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Weekly keyword (most cited) query
-        req.args = MultiDict([('query_type', 'REFS'),
+        req.args = MultiDict([('query_type', 'REFS'), ('db_key', 'AST'),
                               ('title', '"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('useful("nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU)') +
+                         '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
     def test_myads_query_error(self):
@@ -1039,7 +1043,7 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('q=*:*' +  '&error_message=MISSING_REQUIRED_PARAMETER/', search)
 
         # when both author and title is supplied to query_type == 'PAPER' and db_key == 'AST'
-        req.args = MultiDict([('query_type', 'PAPER'), ('db_key', 'AST'),
+        req.args = MultiDict([('query_type', 'PAPER'),
                               ('author', 'LU, JESSICA\r\nHOSEK, MATTHEW\r\nKEWLEY, LISA\r\nACCOMAZZI, ALBERTO\r\nKURTZ, MICHAEL'),
                               ('title', '"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU'),
                               ('start_year', '2019')])
