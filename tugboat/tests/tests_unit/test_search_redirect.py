@@ -963,7 +963,7 @@ class TestSearchParametersTranslation(TestCase):
         req.mimetype = None
 
         # Daily arXiv query
-        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'DAILY_PRE'),
+        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'DAILY_PRE'), ('qform', 'PRE'),
                               ('arxiv_sel', 'astro-ph'), ('start_year', '2019'),
                               ('title', '*+"nuclear star cluster"')])
         req.args.update(self.append_defaults())
@@ -973,7 +973,8 @@ class TestSearchParametersTranslation(TestCase):
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Weekly citations query
-        req.args = MultiDict([('query_type', 'CITES'), ('author', 'LOCKHART, KELLY')])
+        req.args = MultiDict([('query_type', 'CITES'), ('db_key', 'ALL'),
+                              ('author', 'LOCKHART, KELLY')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
@@ -981,24 +982,26 @@ class TestSearchParametersTranslation(TestCase):
                          '&sort=' + urllib.quote('score desc') +  '/', search)
 
         # Weekly authors query
-        req.args = MultiDict([('query_type', 'PAPER'), ('db_key', 'AST'),
+        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'AST'),
                               ('author', 'LU, JESSICA\r\nHOSEK, MATTHEW\r\nKEWLEY, LISA\r\nACCOMAZZI, ALBERTO\r\nKURTZ, MICHAEL'),
                               ('start_year', '2019')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["NOW-25DAYS" TO NOW] pubdate:[2019-00 TO *]') +
+        self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&'
+                         'q=' + urllib.quote('author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["NOW-25DAYS" TO NOW] pubdate:[2019-00 TO *]') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Weekly keyword (recent papers) query
-        req.args = MultiDict([('query_type', 'PAPER'), ('db_key', 'AST'),
+        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'AST'),
                               ('title', '"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU'),
                               ('start_year', '2019')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU entdate:["NOW-25DAYS" TO NOW] pubdate:[2019-00 TO *]') +
+        self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&'
+                         'q=' + urllib.quote('"nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU entdate:["NOW-25DAYS" TO NOW] pubdate:[2019-00 TO *]') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('entdate desc') +  '/', search)
 
@@ -1008,7 +1011,8 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('trending("nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU)') +
+        self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&' +
+                         'q=' + urllib.quote('trending("nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU)') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
@@ -1018,7 +1022,8 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('useful("nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU)') +
+        self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&' +
+                         'q=' + urllib.quote('useful("nuclear star cluster" or ADS or "supermassive black holes" or M31 or "Andromeda Galaxy" or OSIRIS or IFU)') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
