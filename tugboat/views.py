@@ -16,6 +16,7 @@ from dateutil.relativedelta import relativedelta
 import calendar
 import re
 from collections import OrderedDict
+import adsparser
 
 class IndexView(Resource):
     """
@@ -328,6 +329,16 @@ class ClassicSearchRedirectView(Resource):
             return False
         return True
 
+    def translate_title_for_myads(self, title_str):
+        """ return parsed title in the form accept by BBB """
+        title = self.classic_field_to_string(title_str)[0].lstrip('*')
+        try:
+            # remove the star if there is on at the beginning and call the special parser
+            return adsparser.parse_classic_keywords(title)
+        except:
+            # go with what it was typed
+            return title
+
     def translate_myads_queries(self, args):
         """return query string for the six different myads queries"""
 
@@ -340,16 +351,18 @@ class ClassicSearchRedirectView(Resource):
             # Daily arXiv query
             if qform:
                 arxiv_sel = args.pop('arxiv_sel', None)
-                start_year = args.pop('start_year', None)
                 title_str = args.pop('title', None)
-                if arxiv_sel and self.validate_arxiv_sel(arxiv_sel) and start_year and title_str:
+                date_start = self.translate_entry_date_start(args)
+                date_end = self.translate_entry_date_end(args)
+                start_year = args.pop('start_year', None)
+                if arxiv_sel and self.validate_arxiv_sel(arxiv_sel) and title_str and date_start and date_end and start_year:
                     # if all entries are valid include them, oring them
-                    arxiv_class = '(' + ' OR '.join(['arxiv_class:' + c for c in arxiv_sel.split(',')]) + ')'
-                    # need to parse title with special parser later
-                    # for now if there is * at the beginning remove it
-                    title = self.classic_field_to_string(title_str)[0].lstrip('*')
-                    daily_arxiv_query = 'bibstem:arxiv ({arxiv_class} OR {title}) entdate:["NOW-2DAYS" TO NOW] pubdate:[{start_year}-00 TO *]'
-                    daily_arxiv_query = daily_arxiv_query.format(arxiv_class=arxiv_class, title=title, start_year=start_year)
+                    arxiv_class = '(' + ' OR '.join(['arxiv_class:' + c + '.*' for c in arxiv_sel.split(',')]) + ')'
+                    title = self.translate_title_for_myads(title_str)
+                    daily_arxiv_query = 'bibstem:arxiv ({arxiv_class} OR {title}) entdate:[{date_start} TO {date_end}] pubdate:[{start_year}-00 TO *]'
+                    daily_arxiv_query = daily_arxiv_query.format(arxiv_class=arxiv_class, title=title,
+                                                                 date_start=date_start, date_end=date_end,
+                                                                 start_year=start_year)
                     self.translation.search.append(urllib.quote(daily_arxiv_query))
                     self.translation.sort = urllib.quote('score desc')
                 else:
@@ -359,6 +372,8 @@ class ClassicSearchRedirectView(Resource):
                 # decide which is which based on author/title parameter
                 authors_str = args.pop('author', None)
                 title_str = args.pop('title', None)
+                date_start = self.translate_entry_date_start(args)
+                date_end = self.translate_entry_date_end(args)
                 start_year = args.pop('start_year', None)
 
                 # if author is filled and title is empty then it is Weekly authors query
@@ -366,8 +381,9 @@ class ClassicSearchRedirectView(Resource):
                     if start_year:
                         authors = self.classic_field_to_array(authors_str)
                         author_query = ' OR '.join(['author:' + x for x in authors])
-                        weekly_authors_query = '{author_query} entdate:["NOW-25DAYS" TO NOW] pubdate:[{start_year}-00 TO *]'
+                        weekly_authors_query = '{author_query} entdate:[{date_start} TO {date_end}] pubdate:[{start_year}-00 TO *]'
                         weekly_authors_query = weekly_authors_query.format(author_query=author_query,
+                                                                           date_start=date_start, date_end=date_end,
                                                                            start_year=start_year)
                         self.translation.search.append(urllib.quote(weekly_authors_query))
                         self.translation.sort = urllib.quote('score desc')
@@ -377,12 +393,13 @@ class ClassicSearchRedirectView(Resource):
                 # if title is filled and author is empty then it is Weekly keyword (recent papers) query
                 elif title_str and not authors_str:
                     if start_year:
-                        # need to parse title with special parser later
-                        title = self.classic_field_to_string(title_str)[0]
-                        weekly_keyword_query = '{title} entdate:["NOW-25DAYS" TO NOW] pubdate:[{start_year}-00 TO *]'
-                        weekly_keyword_query = weekly_keyword_query.format(title=title, start_year=start_year)
+                        title = self.translate_title_for_myads(title_str)
+                        weekly_keyword_query = '{title} entdate:[{date_start} TO {date_end}] pubdate:[{start_year}-00 TO *]'
+                        weekly_keyword_query = weekly_keyword_query.format(title=title,
+                                                                           date_start=date_start, date_end=date_end,
+                                                                           start_year=start_year)
                         self.translation.search.append(urllib.quote(weekly_keyword_query))
-                        self.translation.sort = urllib.quote('entdate desc')
+                        self.translation.sort = urllib.quote('entry_date desc')
                     else:
                         self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
 
@@ -405,8 +422,7 @@ class ClassicSearchRedirectView(Resource):
         elif query_type == 'ALSOREADS':
             title_str = args.pop('title', None)
             if title_str:
-                # need to parse title with special parser later
-                title = self.classic_field_to_string(title_str)[0]
+                title = self.translate_title_for_myads(title_str)
                 weekly_keyword_query = 'trending({title})'.format(title=title)
                 self.translation.search.append(urllib.quote(weekly_keyword_query))
                 self.translation.sort = urllib.quote('score desc')
@@ -417,8 +433,7 @@ class ClassicSearchRedirectView(Resource):
         elif query_type == 'REFS':
             title_str = args.pop('title', None)
             if title_str:
-                # need to parse title with special parser later
-                title = self.classic_field_to_string(title_str)[0]
+                title = self.translate_title_for_myads(title_str)
                 weekly_keyword_query = 'useful({title})'.format(title=title)
                 self.translation.search.append(urllib.quote(weekly_keyword_query))
                 self.translation.sort = urllib.quote('score desc')
@@ -976,20 +991,27 @@ class ClassicSearchRedirectView(Resource):
 
         return nonfielded metadata search query
         """
-        REGEX_MATCH_YEAR_RANGE = OrderedDict([
-            (re.compile(r"([12][089]\d\d-[12][089]\d\d)"), r"year:\1"),
-            (re.compile(r"([12][089]\d\d)-"), r"year:\1-" + str(datetime.today().year+1)),
-            (re.compile(r"([12][089]\d\d)"), r"year:\1"),
+        REGEX_UNFILDED_MATCH = OrderedDict([
+            (re.compile(r"^[bibcode]?.*([12][089]\d\d[A-Z\.0-9&]{15})$", re.IGNORECASE), r'bibcode:"%s"'),
+            (re.compile(r"^title[=\s:]+(.*)$", re.IGNORECASE), r'title:"%s"'),
+            (re.compile(r"^author[s]*[=\s:]+(.*)$", re.IGNORECASE), r'author:"%s"'),
+            (re.compile(r"^[doi]?.*(10\..*)$", re.IGNORECASE), r'doi:"%s"'),
+            (re.compile(r"^year.*([12][089]\d\d-[12][089]\d\d)$", re.IGNORECASE), r'year:%s'),
+            (re.compile(r"^year.*([12][089]\d\d)$", re.IGNORECASE), r'year:%s'),
+            (re.compile(r"^([12][089]\d\d)$", re.IGNORECASE), r'year:%s'),
+            (re.compile(r"^(.*)$", re.IGNORECASE), r'%s'),
         ])
-
-        qsearch = args.pop('qsearch', None)
-        if qsearch:
-            qsearch = qsearch.replace('intitle:', 'title:')
-            for key in REGEX_MATCH_YEAR_RANGE:
-                if key.search(qsearch) is not None:
-                    qsearch = key.sub(REGEX_MATCH_YEAR_RANGE[key], qsearch)
+        value = args.pop('qsearch', None)
+        if value:
+            qsearch = ''
+            for key in REGEX_UNFILDED_MATCH:
+                match = key.search(value)
+                if match:
+                    qsearch = REGEX_UNFILDED_MATCH[key]%(match.group(1))
                     break
-            self.translation.search.append(qsearch)
+            if len(qsearch) > 0:
+                self.translation.search.append(urllib.quote_plus(qsearch))
+
 
     def translate_sort(self, args):
         """ translate sort parameter """
