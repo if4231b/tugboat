@@ -253,10 +253,6 @@ class ClassicSearchRedirectView(Resource):
         if args.get('query_type', None):
             return self.translate_myads_queries(args)
 
-        # this was added for the side of myads, for the classic forms it is ignored,
-        # just remove it, if it is in the args, so that it does not show in the list of unprocessed params
-        args.pop('qform', None)
-
         # functions to translate/process specific parameters
         # consider using reflection to obtain this list
         funcs = [self.translate_authors,
@@ -392,7 +388,7 @@ class ClassicSearchRedirectView(Resource):
 
                 # if both title and author  have have values, cannot decide which query it is
                 elif authors_str and title_str:
-                    self.translation.error_message.append('UNABLE_DECIDE_QUERY_TYPE')
+                    self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
         # Weekly citations query
         elif query_type == 'CITES':
@@ -431,7 +427,7 @@ class ClassicSearchRedirectView(Resource):
 
         # none of the known queries
         else:
-            self.translation.error_message.append('UNABLE_DECIDE_QUERY_TYPE')
+            self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
         # combine translation fragments in self.translation to ads/bumblebee parameter string
         if len(self.translation.search) == 0:
@@ -1059,6 +1055,7 @@ class ClassicSearchRedirectView(Resource):
                                   'full_syn'     : '',
                                   'full_wgt'     : '',
                                   'full_wt'      : '',
+                                  'qform'        : '',
 
         }
         for key,value in classic_ignored_fields.iteritems():
@@ -1087,7 +1084,7 @@ class ClassicSearchRedirectView(Resource):
             # if set_value == None:
             #     continue
             if len(value) and value not in self.translation.unprocessed_fields:
-                self.translation.unprocessed_fields.append(value)
+                self.translation.unprocessed_fields.append(urllib.quote(value))
 
     def translate_weights(self, args):
         """ check the weight parameters """
@@ -1137,7 +1134,7 @@ class ClassicSearchRedirectView(Resource):
                         not_default.append(dict_weights_of_type[type])
         if len(not_default) > 0:
             for err in not_default:
-                self.translation.unprocessed_fields.append(err)
+                self.translation.unprocessed_fields.append(urllib.quote(err))
 
 
     def validate_arxiv_sel(self, arxiv_sel):
