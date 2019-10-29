@@ -518,14 +518,14 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertTrue('unprocessed_parameter' in search)
-        self.assertTrue('Synonym Replacement' in search)
+        self.assertTrue(urllib.quote('Synonym Replacement') in search)
 
         req.args = MultiDict([('aut_syn', 'foo'), ('aut_wt', 'bar')])
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertTrue('unprocessed_parameter' in search)
-        self.assertTrue('Synonym Replacement' in search)
-        self.assertTrue('Relative Weights' in search)
+        self.assertTrue(urllib.quote('Synonym Replacement') in search)
+        self.assertTrue(urllib.quote('Relative Weights') in search)
 
     def test_qsearch(self):
         """qsearch searches metadata
@@ -1038,7 +1038,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' +  '&error_message=UNABLE_DECIDE_QUERY_TYPE/', search)
+        self.assertEqual('q=*:*' +  '&error_message=UNRECOGNIZABLE_VALUE/', search)
 
         # missing params
         req.args = MultiDict([('query_type', 'ALSOREADS')])
@@ -1055,7 +1055,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' +  '&error_message=UNABLE_DECIDE_QUERY_TYPE/', search)
+        self.assertEqual('q=*:*' +  '&error_message=UNRECOGNIZABLE_VALUE/', search)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
