@@ -1019,7 +1019,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) OR +"nuclear star cluster") entdate:[2019-10-15:00:00 TO 2019-10-16] pubdate:[2019-00 TO *]') +
+        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) OR +"nuclear star cluster") entdate:["2019-10-15:00:00" TO 2019-10-16] pubdate:[2019-00 TO *]') +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Weekly citations query
@@ -1041,7 +1041,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&'
-                         'q=' + urllib.quote('author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:[2019-09-26:00:00 TO 2019-10-18] pubdate:[2019-00 TO *]') +
+                         'q=' + urllib.quote('author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["2019-09-26:00:00" TO 2019-10-18] pubdate:[2019-00 TO *]') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
@@ -1055,7 +1055,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&'
-                         'q=' + urllib.quote('"nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU entdate:[2019-09-26:00:00 TO 2019-10-18] pubdate:[2019-00 TO *]') +
+                         'q=' + urllib.quote('"nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU entdate:["2019-09-26:00:00" TO 2019-10-18] pubdate:[2019-00 TO *]') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('entry_date desc') +  '/', search)
 
