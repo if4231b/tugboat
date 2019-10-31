@@ -469,8 +469,9 @@ class ClassicSearchRedirectView(Resource):
         logic = self.get_logic('author', args)
         exact = self.author_exact(args)
         # 5/21 from Alberto: let's switch the author "OR" to an "AND" by default and issue a warning to the user.
-        # if logic == 'OR':
-        #     connector = ' OR '
+        # 10/30/2019 from Alberto: let's recognize the boolean selected by user
+        if logic == 'OR':
+            connector = ' OR '
         author_field = 'author:'
         if exact:
             author_field = '=author:'
@@ -494,8 +495,9 @@ class ClassicSearchRedirectView(Resource):
                 if len(self.translation.search) > 0:
                     self.translation.search.append('AND')
                 self.translation.search.append(search)
-                if len(authors) > 1 and logic == 'OR':
-                    self.translation.warning_message.append(urllib.quote('AUTHOR_ANDED_WARNING'))
+                # see the 10/30/2019 comment above
+                # if len(authors) > 1 and logic == 'OR':
+                #     self.translation.warning_message.append(urllib.quote('AUTHOR_ANDED_WARNING'))
 
     def translate_simple(self, args, classic_param, bbb_param):
         """process easy to translate fields including title, abstract, and object
@@ -1015,7 +1017,7 @@ class ClassicSearchRedirectView(Resource):
 
     def translate_sort(self, args):
         """ translate sort parameter """
-        dict_sort = {'SCORE'         : 'date desc, bibcode desc',
+        dict_sort = {'SCORE'         : 'score desc',
                      'AUTHOR'        : 'first_author desc',
                      'NDATE'         : 'date desc',
                      'ODATE'         : 'date asc',
@@ -1100,13 +1102,14 @@ class ClassicSearchRedirectView(Resource):
                 continue
             # only produce a message if other than default
             # 6/11/2019 lets not ignore this anymore
-            if key == 'data_type' and set_value:
+            # 10/30/2019 as per Alberto, we are back to ignoring this param, kinda, we are accepting value of `SHORT`
+            if key == 'data_type' and set_value == 'SHORT':
                 self.translation.params += '&format=' + set_value
                 continue
-            # if set_value == None:
-            #     continue
-            if len(value) and value not in self.translation.unprocessed_fields:
-                self.translation.unprocessed_fields.append(urllib.quote(value))
+            if set_value is None:
+                continue
+            if key not in self.translation.unprocessed_fields:
+                self.translation.unprocessed_fields.append(key)
 
     def translate_weights(self, args):
         """ check the weight parameters """

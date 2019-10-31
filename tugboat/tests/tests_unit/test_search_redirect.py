@@ -92,14 +92,14 @@ class TestSearchParametersTranslation(TestCase):
                          author_search) # author with exact match
 
         # changing OR to AND and issuing a warning
+        # 10/30/2019 From Alberto: let's recognize what boolean user has used
         req.args = MultiDict([('author', urllib.quote('Huchra, John;Macri, Lucas M.')), ('aut_logic', 'OR')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         author_search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra, John" AND "Macri, Lucas M."') + ')' +
+        self.assertEqual('q=' + urllib.quote('author:') + '(' + urllib.quote('"Huchra, John" OR "Macri, Lucas M."') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') +
-                         '&format=SHORT' +
-                         '&warning_message=' + 'AUTHOR_ANDED_WARNING' + '/',
+                         '&format=SHORT' + '/',
                          author_search) # authors with or
 
     def test_object(self):
@@ -906,7 +906,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('score desc') + '&format=SHORT' +  '/', search)
 
         req.args = MultiDict([('sort', 'foo')])
         req.args.update(self.append_defaults())
@@ -1112,6 +1112,33 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' +  '&error_message=UNRECOGNIZABLE_VALUE/', search)
+
+    def test_translate_to_ignore(self):
+        """ test translate_to_ignore"""
+        req = Request('get', 'http://test.test?')
+        req.prepare()
+        req.mimetype = None
+
+        req.args = MultiDict([('lpi_query', 'NO')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +
+                         '&unprocessed_parameter=lpi_query/', search)
+
+    def test_translate_weights(self):
+        """ test translate_weights"""
+        req = Request('get', 'http://test.test?')
+        req.prepare()
+        req.mimetype = None
+
+        req.args = MultiDict([('aut_syn', 'NO')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +
+                         '&unprocessed_parameter=Synonym%20Replacement/', search)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
