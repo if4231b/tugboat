@@ -358,7 +358,7 @@ class ClassicSearchRedirectView(Resource):
                     # if all entries are valid include them, oring them
                     arxiv_class = '(' + ' OR '.join(['arxiv_class:' + c + '.*' for c in arxiv_sel.split(',')]) + ')'
                     title = self.translate_title_for_myads(title_str)
-                    daily_arxiv_query = 'bibstem:arxiv ({arxiv_class} OR {title}) entdate:[{date_start} TO {date_end}] pubdate:[{start_year}-00 TO *]'
+                    daily_arxiv_query = 'bibstem:arxiv ({arxiv_class} OR {title}) entdate:[{date_start}:00:00 TO {date_end}] pubdate:[{start_year}-00 TO *]'
                     daily_arxiv_query = daily_arxiv_query.format(arxiv_class=arxiv_class, title=title,
                                                                  date_start=date_start, date_end=date_end,
                                                                  start_year=start_year)
@@ -380,7 +380,7 @@ class ClassicSearchRedirectView(Resource):
                     if start_year:
                         authors = self.classic_field_to_array(authors_str)
                         author_query = ' OR '.join(['author:' + x for x in authors])
-                        weekly_authors_query = '{author_query} entdate:[{date_start} TO {date_end}] pubdate:[{start_year}-00 TO *]'
+                        weekly_authors_query = '{author_query} entdate:[{date_start}:00:00 TO {date_end}] pubdate:[{start_year}-00 TO *]'
                         weekly_authors_query = weekly_authors_query.format(author_query=author_query,
                                                                            date_start=date_start, date_end=date_end,
                                                                            start_year=start_year)
@@ -393,7 +393,7 @@ class ClassicSearchRedirectView(Resource):
                 elif title_str and not authors_str:
                     if start_year:
                         title = self.translate_title_for_myads(title_str)
-                        weekly_keyword_query = '{title} entdate:[{date_start} TO {date_end}] pubdate:[{start_year}-00 TO *]'
+                        weekly_keyword_query = '{title} entdate:[{date_start}:00:00 TO {date_end}] pubdate:[{start_year}-00 TO *]'
                         weekly_keyword_query = weekly_keyword_query.format(title=title,
                                                                            date_start=date_start, date_end=date_end,
                                                                            start_year=start_year)
