@@ -151,8 +151,7 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=' +
                          urllib.quote('title:') + '(' + urllib.quote('ADS Kurtz') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +
-                         '&warning_message=' + 'TITLE_ANDED_WARNING' + '/', search) # single object
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' + '/', search) # single object
 
     def test_text(self):
         """text search"""
@@ -173,8 +172,7 @@ class TestSearchParametersTranslation(TestCase):
         search = view.translate(req)
         self.assertEqual('q=' +
                          urllib.quote('abs:') + '(' + urllib.quote('foo bar') + ')' +
-                         '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +
-                         '&warning_message=' + 'ABSTRACT_ANDED_WARNING' + '/', search) # single object
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' + '/', search) # single object
 
     def test_pubdate(self):
         """test pubdate"""

@@ -329,15 +329,14 @@ class ClassicSearchRedirectView(Resource):
             return False
         return True
 
-    def translate_title_for_myads(self, title_str):
-        """ return parsed title in the form accept by BBB """
-        title = self.classic_field_to_string(title_str)[0].lstrip('*')
+    def translate_title_for_myads(self, value):
+        """ return classic title in the form accept by BBB """
         try:
-            # remove the star if there is on at the beginning and call the special parser
-            return adsparser.parse_classic_keywords(title)
+            # remove the star if there is one at the beginning and call the special parser
+            return adsparser.parse_classic_keywords(value.lstrip('*'))
         except:
-            # go with what it was typed
-            return title
+            # go with regular tokenizer
+            return self.classic_field_to_string(value)[0].lstrip('*')
 
     def translate_myads_queries(self, args):
         """return query string for the six different myads queries"""
@@ -519,11 +518,12 @@ class ClassicSearchRedirectView(Resource):
             else:
                 terms = self.classic_field_to_string(classic_str)
                 # issue a warning for title and abstract if multiple words are specified and OR is selected
-                if len(''.join(terms).split(' ')) > 1 and logic == 'OR':
-                    if classic_param == 'title':
-                        self.translation.warning_message.append(urllib.quote('TITLE_ANDED_WARNING'))
-                    elif classic_param == 'text':
-                        self.translation.warning_message.append(urllib.quote('ABSTRACT_ANDED_WARNING'))
+                # 10/30/2019 from Alberto: let's recognize the boolean selected by user
+                # if len(''.join(terms).split(' ')) > 1 and logic == 'OR':
+                #     if classic_param == 'title':
+                #         self.translation.warning_message.append(urllib.quote('TITLE_ANDED_WARNING'))
+                #     elif classic_param == 'text':
+                #         self.translation.warning_message.append(urllib.quote('ABSTRACT_ANDED_WARNING'))
             search += urllib.quote(bbb_param + ':') + '('
             for term in terms:
                 search += urllib.quote(term + connector)
