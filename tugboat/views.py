@@ -341,6 +341,7 @@ class ClassicSearchRedirectView(Resource):
     def translate_myads_queries(self, args):
         """return query string for the six different myads queries"""
 
+        db_key = args.get('db_key', None)
         self.translate_database(args)
 
         query_type = args.pop('query_type', None)
@@ -358,8 +359,11 @@ class ClassicSearchRedirectView(Resource):
                     # if all entries are valid include them, oring them
                     arxiv_class = '(' + ' OR '.join(['arxiv_class:' + c + '.*' for c in arxiv_sel.split(',')]) + ')'
                     title = self.translate_title_for_myads(title_str)
-                    daily_arxiv_query = 'bibstem:arxiv ({arxiv_class} OR {title}) entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
-                    daily_arxiv_query = daily_arxiv_query.format(arxiv_class=arxiv_class, title=title,
+                    # OR arxiv classes and title if any db_key other than DAILY_PRE,
+                    # otherwise leave empty which is going to be AND
+                    add_or = ' ' if db_key == 'DAILY_PRE' else ' OR '
+                    daily_arxiv_query = 'bibstem:arxiv ({arxiv_class}{add_or}{title}) entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
+                    daily_arxiv_query = daily_arxiv_query.format(arxiv_class=arxiv_class, add_or=add_or, title=title,
                                                                  date_start=date_start, date_end=date_end,
                                                                  start_year=start_year)
                     self.translation.search.append(urllib.quote(daily_arxiv_query))
