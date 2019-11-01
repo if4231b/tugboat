@@ -1010,8 +1010,20 @@ class TestSearchParametersTranslation(TestCase):
         req.prepare()
         req.mimetype = None
 
-        # Daily arXiv query
+        # Daily arXiv query with db_key DAILY_PRE => no OR
         req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'DAILY_PRE'), ('qform', 'PRE'),
+                              ('arxiv_sel', 'astro-ph'), ('start_year', '2019'),
+                              ('start_entry_day', '15'), ('start_entry_mon', '10'), ('start_entry_year', '2019'),
+                              ('end_entry_day', '16'), ('end_entry_mon', '10'), ('end_entry_year', '2019'),
+                              ('title', '*+"nuclear star cluster"')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) +"nuclear star cluster") entdate:["2019-10-15:00:00" TO 2019-10-16] pubdate:[2019-00 TO *]') +
+                         '&sort=' + urllib.quote('score desc') + '/', search)
+
+        # Daily arXiv query with anything other than DAILY_PRE => OR
+        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'PRE'), ('qform', 'PRE'),
                               ('arxiv_sel', 'astro-ph'), ('start_year', '2019'),
                               ('start_entry_day', '15'), ('start_entry_mon', '10'), ('start_entry_year', '2019'),
                               ('end_entry_day', '16'), ('end_entry_mon', '10'), ('end_entry_year', '2019'),
