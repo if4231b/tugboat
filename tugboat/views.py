@@ -259,11 +259,11 @@ class ClassicSearchRedirectView(Resource):
         funcs = [self.translate_authors,
                  self.translate_pubdate, self.translate_entry_date,
                  self.translate_results_subset, self.translate_return_req,
-                 self.translate_article_sel, self.translate_qsearch,
-                 self.translate_database, self.translate_jou_pick,
-                 self.translate_group_sel, self.translate_sort,
-                 self.translate_to_ignore, self.translate_weights,
-                 self.translate_arxiv_sel, self.translate_ref_stems]
+                 self.translate_article_sel, self.translate_database,
+                 self.translate_jou_pick, self.translate_group_sel,
+                 self.translate_sort, self.translate_to_ignore,
+                 self.translate_weights, self.translate_arxiv_sel,
+                 self.translate_ref_stems]
         for f in funcs:
             f(args)  # each may contribute to self.translation singleton
 
@@ -274,6 +274,11 @@ class ClassicSearchRedirectView(Resource):
 
         # this is a filter on the classic side but in solr search is not treated as such
         self.translate_data_entries(args)
+
+        # translate qsearch as the last item, which is for unfielded form
+        # this way qsearch parameter is still in args so that it can be decided which parameters
+        # make sense to mark as unprocessed
+        self.translate_qsearch(args)
 
         # combine translation fragments in self.translation to ads/bumblebee parameter string
         if len(self.translation.search) == 0:
@@ -341,9 +346,6 @@ class ClassicSearchRedirectView(Resource):
     def translate_myads_queries(self, args):
         """return query string for the six different myads queries"""
 
-        db_key = args.get('db_key', None)
-        self.translate_database(args)
-
         query_type = args.pop('query_type', None)
 
         if query_type == 'PAPERS':
@@ -361,7 +363,7 @@ class ClassicSearchRedirectView(Resource):
                     title = self.translate_title_for_myads(title_str)
                     # OR arxiv classes and title if any db_key other than DAILY_PRE,
                     # otherwise leave empty which is going to be AND
-                    add_or = ' ' if db_key == 'DAILY_PRE' else ' OR '
+                    add_or = ' ' if args.get('db_key', 'DAILY_PRE') == 'DAILY_PRE' else ' OR '
                     daily_arxiv_query = 'bibstem:arxiv ({arxiv_class}{add_or}{title}) entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
                     daily_arxiv_query = daily_arxiv_query.format(arxiv_class=arxiv_class, add_or=add_or, title=title,
                                                                  date_start=date_start, date_end=date_end,
@@ -446,6 +448,8 @@ class ClassicSearchRedirectView(Resource):
         # none of the known queries
         else:
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+
+        self.translate_database(args)
 
         # combine translation fragments in self.translation to ads/bumblebee parameter string
         if len(self.translation.search) == 0:
@@ -1087,10 +1091,10 @@ class ClassicSearchRedirectView(Resource):
 
         }
         for key,value in classic_ignored_fields.iteritems():
-            set_value = args.pop(key, None)
+            set_key = args.pop(key, None)
             if (key == 'sim_query' or key == 'ned_query'):
                 # if it is checked, do nothing
-                if (set_value is not None):
+                if (set_key is not None):
                     continue
                 # if no object search is entered, do nothing
                 # note that this function is called before function that analyzes object
@@ -1100,17 +1104,17 @@ class ClassicSearchRedirectView(Resource):
                 # go down to display a message if either of queries is unchecked
                 # and an object search is defined
             # only produce a message if a value is set for min_score
-            if key == 'min_score' and set_value == '':
+            if key == 'min_score' and set_key == '':
                 continue
-            if key == 'mail_link' and set_value == None:
+            if key == 'mail_link' and set_key == None:
                 continue
             # only produce a message if other than default
             # 6/11/2019 lets not ignore this anymore
             # 10/30/2019 as per Alberto, we are back to ignoring this param, kinda, we are accepting value of `SHORT`
-            if key == 'data_type' and set_value == 'SHORT':
-                self.translation.params += '&format=' + set_value
+            if key == 'data_type' and set_key == 'SHORT':
+                self.translation.params += '&format=' + set_key
                 continue
-            if set_value is None:
+            if set_key is None:
                 continue
             if key not in self.translation.unprocessed_fields:
                 self.translation.unprocessed_fields.append(key)
@@ -1148,9 +1152,9 @@ class ClassicSearchRedirectView(Resource):
         not_default = []
         for key,value in dict_weights_default.iteritems():
             if key in args:
-                set_value = args.pop(key, None)
+                set_key = args.pop(key, None)
                 # if differs from default added to the list
-                if set_value != value:
+                if set_key != value:
                     type = key.split('_')[1]
                     if dict_weights_of_type[type] not in not_default:
                         not_default.append(dict_weights_of_type[type])
@@ -1161,7 +1165,8 @@ class ClassicSearchRedirectView(Resource):
                     type = key.split('_')[1]
                     if dict_weights_of_type[type] not in not_default:
                         not_default.append(dict_weights_of_type[type])
-        if len(not_default) > 0:
+        # included them if called from fielded form only, otherwise these parameters should be ignore
+        if len(not_default) > 0 and args.get('qsearch', None) is None:
             for err in not_default:
                 self.translation.unprocessed_fields.append(urllib.quote(err))
 
