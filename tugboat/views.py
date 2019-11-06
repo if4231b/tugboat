@@ -1165,10 +1165,14 @@ class ClassicSearchRedirectView(Resource):
                     type = key.split('_')[1]
                     if dict_weights_of_type[type] not in not_default:
                         not_default.append(dict_weights_of_type[type])
-        # included them if called from fielded form only, otherwise these parameters should be ignore
-        if len(not_default) > 0 and args.get('qsearch', None) is None:
-            for err in not_default:
-                self.translation.unprocessed_fields.append(urllib.quote(err))
+        if len(not_default) > 0:
+            if args.get('qsearch', None) is not None:
+                # if this was for an unfielded query just display one general message
+                self.translation.unprocessed_fields.append(urllib.quote('One or more weighted parameter(s)'))
+            else:
+                for err in not_default:
+                    self.translation.unprocessed_fields.append(urllib.quote(err))
+
 
 
     def validate_arxiv_sel(self, arxiv_sel):
