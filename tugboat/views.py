@@ -350,7 +350,7 @@ class ClassicSearchRedirectView(Resource):
 
         if query_type == 'PAPERS':
             qform = args.pop('qform', None)
-            # Daily arXiv query
+            # Daily arXiv query (#1)
             if qform:
                 arxiv_sel = args.pop('arxiv_sel', None)
                 title_str = args.pop('title', None)
@@ -361,9 +361,9 @@ class ClassicSearchRedirectView(Resource):
                     # if all entries are valid include them, oring them
                     arxiv_class = '(' + ' OR '.join(['arxiv_class:' + c + '.*' for c in arxiv_sel.split(',')]) + ')'
                     title = self.translate_title_for_myads(title_str)
-                    # OR arxiv classes and title if any db_key other than DAILY_PRE,
+                    # OR arxiv classes and title if db_key is DAILY_PRE,
                     # otherwise leave empty which is going to be AND
-                    add_or = ' ' if args.get('db_key', 'DAILY_PRE') == 'DAILY_PRE' else ' OR '
+                    add_or = ' OR ' if args.get('db_key', 'DAILY_PRE') == 'DAILY_PRE' else ' '
                     daily_arxiv_query = 'bibstem:arxiv ({arxiv_class}{add_or}{title}) entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
                     daily_arxiv_query = daily_arxiv_query.format(arxiv_class=arxiv_class, add_or=add_or, title=title,
                                                                  date_start=date_start, date_end=date_end,
@@ -381,13 +381,15 @@ class ClassicSearchRedirectView(Resource):
                 date_end = self.translate_entry_date_end(args)
                 start_year = args.pop('start_year', None)
 
-                # if author is filled and title is empty then it is Weekly authors query
+                # if author is filled and title is empty then it is Weekly authors query (#3)
                 if authors_str and not title_str:
-                    if start_year:
+                    if start_year and date_start and date_end:
                         authors = self.classic_field_to_array(authors_str)
                         author_query = ' OR '.join(['author:' + x for x in authors])
-                        weekly_authors_query = '{author_query} entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
-                        weekly_authors_query = weekly_authors_query.format(author_query=author_query,
+                        arxiv_addition = 'bibstem:arxiv ' if args.get('db_key', None) == 'PRE' else ''
+                        weekly_authors_query = '{arxiv_addition}{author_query} entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
+                        weekly_authors_query = weekly_authors_query.format(arxiv_addition=arxiv_addition,
+                                                                           author_query=author_query,
                                                                            date_start=date_start, date_end=date_end,
                                                                            start_year=start_year)
                         self.translation.search.append(urllib.quote(weekly_authors_query))
@@ -395,9 +397,9 @@ class ClassicSearchRedirectView(Resource):
                     else:
                         self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
 
-                # if title is filled and author is empty then it is Weekly keyword (recent papers) query
+                # if title is filled and author is empty then it is Weekly keyword (recent papers) query (#4)
                 elif title_str and not authors_str:
-                    if start_year:
+                    if start_year and date_start and date_end:
                         title = self.translate_title_for_myads(title_str)
                         weekly_keyword_query = '{title} entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
                         weekly_keyword_query = weekly_keyword_query.format(title=title,
@@ -412,7 +414,7 @@ class ClassicSearchRedirectView(Resource):
                 elif authors_str and title_str:
                     self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
-        # Weekly citations query
+        # Weekly citations query (#2)
         elif query_type == 'CITES':
             authors_str = args.pop('author', None)
             if authors_str:
@@ -423,7 +425,7 @@ class ClassicSearchRedirectView(Resource):
             else:
                 self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
 
-        # Weekly keyword (popular papers) query
+        # Weekly keyword (popular papers) query (#5)
         elif query_type == 'ALSOREADS':
             title_str = args.pop('title', None)
             if title_str:
@@ -434,7 +436,7 @@ class ClassicSearchRedirectView(Resource):
             else:
                 self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
 
-        # Weekly keyword (most cited) query
+        # Weekly keyword (most cited) query (#6)
         elif query_type == 'REFS':
             title_str = args.pop('title', None)
             if title_str:
