@@ -1010,7 +1010,7 @@ class TestSearchParametersTranslation(TestCase):
         req.prepare()
         req.mimetype = None
 
-        # Daily arXiv query with db_key DAILY_PRE => no OR
+        # Daily arXiv query with db_key DAILY_PRE => OR
         req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'DAILY_PRE'), ('qform', 'PRE'),
                               ('arxiv_sel', 'astro-ph'), ('start_year', '2019'),
                               ('start_entry_day', '15'), ('start_entry_mon', '10'), ('start_entry_year', '2019'),
@@ -1019,10 +1019,10 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) +"nuclear star cluster") entdate:["2019-10-15:00:00" TO 2019-10-16] pubdate:[2019-00 TO *]') +
+        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) OR +"nuclear star cluster") entdate:["2019-10-15:00:00" TO 2019-10-16] pubdate:[2019-00 TO *]') +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
-        # Daily arXiv query with anything other than DAILY_PRE => OR
+        # Daily arXiv query with db_key other than DAILY_PRE => no OR
         req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'PRE'), ('qform', 'PRE'),
                               ('arxiv_sel', 'astro-ph'), ('start_year', '2019'),
                               ('start_entry_day', '15'), ('start_entry_mon', '10'), ('start_entry_year', '2019'),
@@ -1031,7 +1031,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) OR +"nuclear star cluster") entdate:["2019-10-15:00:00" TO 2019-10-16] pubdate:[2019-00 TO *]') +
+        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) +"nuclear star cluster") entdate:["2019-10-15:00:00" TO 2019-10-16] pubdate:[2019-00 TO *]') +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Weekly citations query
@@ -1043,7 +1043,7 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('q=' + urllib.quote('citations(author:"LOCKHART, KELLY")') +
                          '&sort=' + urllib.quote('score desc') +  '/', search)
 
-        # Weekly authors query
+        # Weekly authors query with db_key other than PRE => no prefix
         req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'AST'),
                               ('author', 'LU, JESSICA\r\nHOSEK, MATTHEW\r\nKEWLEY, LISA\r\nACCOMAZZI, ALBERTO\r\nKURTZ, MICHAEL'),
                               ('start_entry_day', '26'), ('start_entry_mon', '9'), ('start_entry_year', '2019'),
@@ -1055,6 +1055,18 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&'
                          'q=' + urllib.quote('author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["2019-09-26:00:00" TO 2019-10-18] pubdate:[2019-00 TO *]') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
+                         '&sort=' + urllib.quote('score desc') + '/', search)
+
+        # Weekly authors query with db_key PRE => add prefix `bibstem:arxiv `
+        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'PRE'),
+                              ('author', 'LU, JESSICA\r\nHOSEK, MATTHEW\r\nKEWLEY, LISA\r\nACCOMAZZI, ALBERTO\r\nKURTZ, MICHAEL'),
+                              ('start_entry_day', '26'), ('start_entry_mon', '9'), ('start_entry_year', '2019'),
+                              ('end_entry_day', '18'), ('end_entry_mon', '10'), ('end_entry_year', '2019'),
+                              ('start_year', '2019')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q='  + urllib.quote('bibstem:arxiv author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["2019-09-26:00:00" TO 2019-10-18] pubdate:[2019-00 TO *]') +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Weekly keyword (recent papers) query
