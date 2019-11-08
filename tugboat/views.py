@@ -386,7 +386,7 @@ class ClassicSearchRedirectView(Resource):
                     if start_year and date_start and date_end:
                         authors = self.classic_field_to_array(authors_str)
                         author_query = ' OR '.join(['author:' + x for x in authors])
-                        arxiv_addition = 'bibstem:arxiv ' if args.get('db_key', 'PRE') == 'PRE' else ''
+                        arxiv_addition = 'bibstem:arxiv ' if args.get('db_key', None) == 'PRE' else ''
                         weekly_authors_query = '{arxiv_addition}{author_query} entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
                         weekly_authors_query = weekly_authors_query.format(arxiv_addition=arxiv_addition,
                                                                            author_query=author_query,
