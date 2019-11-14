@@ -782,10 +782,11 @@ class ClassicSearchRedirectView(Resource):
         6/11/2019 in the process of implementing unclassic we are adding these in """
         number_to_return = args.pop('nr_to_return', None)
         start_nr = args.pop('start_nr', None)
-        if number_to_return:
-            self.translation.params += '&rows=%s'%(number_to_return)
-        if start_nr:
-            self.translation.params += '&start=%s'%(start_nr)
+        # 11/13 From Alberto: Seems that’s what created the problem we are now seeing.  I think we should remove it, right?
+        # if number_to_return:
+        #     self.translation.params += '&rows=%s'%(number_to_return)
+        # if start_nr:
+        #     self.translation.params += '&start=%s'%(start_nr)
 
         # golnaz: hold off for now
         # if number_to_return or start_nr:
