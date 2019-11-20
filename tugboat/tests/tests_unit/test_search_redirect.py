@@ -1011,7 +1011,7 @@ class TestSearchParametersTranslation(TestCase):
         req.mimetype = None
 
         # Daily arXiv query with db_key DAILY_PRE => OR
-        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'DAILY_PRE'), ('qform', 'PRE'),
+        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'DAILY_PRE'),
                               ('arxiv_sel', 'astro-ph'), ('start_year', '2019'),
                               ('start_entry_day', '15'), ('start_entry_mon', '10'), ('start_entry_year', '2019'),
                               ('end_entry_day', '16'), ('end_entry_mon', '10'), ('end_entry_year', '2019'),
@@ -1023,7 +1023,7 @@ class TestSearchParametersTranslation(TestCase):
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Daily arXiv query with db_key other than DAILY_PRE => no OR
-        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'PRE'), ('qform', 'PRE'),
+        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'PRE'),
                               ('arxiv_sel', 'astro-ph'), ('start_year', '2019'),
                               ('start_entry_day', '15'), ('start_entry_mon', '10'), ('start_entry_year', '2019'),
                               ('end_entry_day', '16'), ('end_entry_mon', '10'), ('end_entry_year', '2019'),
@@ -1041,7 +1041,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('citations(author:"LOCKHART, KELLY")') +
-                         '&sort=' + urllib.quote('score desc') +  '/', search)
+                         '&sort=' + urllib.quote('entdate desc') +  '/', search)
 
         # Weekly authors query with db_key other than PRE => no prefix
         req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'AST'),
@@ -1057,8 +1057,8 @@ class TestSearchParametersTranslation(TestCase):
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
-        # Weekly authors query with db_key PRE => add prefix `bibstem:arxiv `
-        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'PRE'),
+        # Weekly authors query with db_key PRE => add arxiv
+        req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'PRE'), ('arxiv_sel', 'astro-ph'),
                               ('author', 'LU, JESSICA\r\nHOSEK, MATTHEW\r\nKEWLEY, LISA\r\nACCOMAZZI, ALBERTO\r\nKURTZ, MICHAEL'),
                               ('start_entry_day', '26'), ('start_entry_mon', '9'), ('start_entry_year', '2019'),
                               ('end_entry_day', '18'), ('end_entry_mon', '10'), ('end_entry_year', '2019'),
@@ -1066,7 +1066,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q='  + urllib.quote('bibstem:arxiv author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["2019-09-26:00:00" TO 2019-10-18] pubdate:[2019-00 TO *]') +
+        self.assertEqual('q='  + urllib.quote('bibstem:arxiv arxiv_class:astro-ph.* author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["2019-09-26:00:00" TO 2019-10-18] pubdate:[2019-00 TO *]') +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Weekly keyword (recent papers) query
@@ -1103,6 +1103,60 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&' +
                          'q=' + urllib.quote('useful("nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU)') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
+                         '&sort=' + urllib.quote('score desc') + '/', search)
+
+        # Weekly citations query with db_key PRE => add arxiv
+        req.args = MultiDict([('query_type', 'CITES'), ('db_key', 'PRE'), ('arxiv_sel', 'astro-ph'),
+                              ('author', 'LOCKHART, KELLY')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('citations((author:"LOCKHART, KELLY") bibstem:arxiv arxiv_class:astro-ph.*)') +
+                         '&sort=' + urllib.quote('entdate desc') +  '/', search)
+
+        # Weekly keyword (popular papers) query with db_key PRE => add arxiv
+        req.args = MultiDict([('query_type', 'ALSOREADS'), ('db_key', 'PRE'), ('arxiv_sel', 'astro-ph'),
+                              ('title', '"nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('trending(("nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU) bibstem:arxiv arxiv_class:astro-ph.*)') +
+                         '&sort=' + urllib.quote('score desc') + '/', search)
+
+        # Weekly keyword (most cited) query with db_key PRE => add arxiv
+        req.args = MultiDict([('query_type', 'REFS'), ('db_key', 'PRE'), ('arxiv_sel', 'astro-ph'),
+                              ('title', '"nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('useful(("nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU) bibstem:arxiv arxiv_class:astro-ph.*)') +
+                         '&sort=' + urllib.quote('score desc') + '/', search)
+
+        # Weekly citations query with db_key PRE => no arxiv classes specified, so no arxiv
+        req.args = MultiDict([('query_type', 'CITES'), ('db_key', 'PRE'),
+                              ('author', 'LOCKHART, KELLY')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('citations(author:"LOCKHART, KELLY")') +
+                         '&sort=' + urllib.quote('entdate desc') +  '/', search)
+
+        # Weekly keyword (popular papers) query with db_key PRE => no arxiv classes specified, so no arxiv
+        req.args = MultiDict([('query_type', 'ALSOREADS'), ('db_key', 'PRE'),
+                              ('title', '"nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('trending("nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU)') +
+                         '&sort=' + urllib.quote('score desc') + '/', search)
+
+        # Weekly keyword (most cited) query with db_key PRE => no arxiv classes specified, so no arxiv
+        req.args = MultiDict([('query_type', 'REFS'), ('db_key', 'PRE'),
+                              ('title', '"nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('useful("nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU)') +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
     def test_myads_query_error(self):
