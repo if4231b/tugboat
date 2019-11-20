@@ -343,6 +343,15 @@ class ClassicSearchRedirectView(Resource):
             # go with regular tokenizer
             return self.classic_field_to_string(value)[0].lstrip('*')
 
+    def arxiv_class_addition_myads_queries(self, args):
+        """return arxiv query string for myads queries"""
+        arxiv_sel = args.pop('arxiv_sel', None)
+        if arxiv_sel and self.validate_arxiv_sel(arxiv_sel):
+            # if all entries are valid include them, oring them
+            arxiv_class = ' OR '.join(['arxiv_class:' + c + '.*' for c in arxiv_sel.split(',')])
+            return arxiv_class
+        return None
+
     def translate_myads_queries(self, args):
         """return query string for the six different myads queries"""
 
@@ -362,7 +371,8 @@ class ClassicSearchRedirectView(Resource):
                 if start_year and date_start and date_end:
                     authors = self.classic_field_to_array(authors_str)
                     author_query = ' OR '.join(['author:' + x for x in authors])
-                    arxiv_addition = 'bibstem:arxiv ' if args.get('db_key', None) == 'PRE' else ''
+                    arxiv_class = self.arxiv_class_addition_myads_queries(args)
+                    arxiv_addition = 'bibstem:arxiv %s '%arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else ''
                     weekly_authors_query = '{arxiv_addition}{author_query} entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
                     weekly_authors_query = weekly_authors_query.format(arxiv_addition=arxiv_addition,
                                                                        author_query=author_query,
@@ -380,15 +390,13 @@ class ClassicSearchRedirectView(Resource):
                 db_key = args.get('db_key', None)
                 # if db_key is DAILY_PRE or PRE then it is Daily arXiv query (#1)
                 if db_key == 'DAILY_PRE' or db_key == 'PRE':
-                    arxiv_sel = args.pop('arxiv_sel', None)
-                    if arxiv_sel and self.validate_arxiv_sel(arxiv_sel) and date_start and date_end and start_year:
-                        # if all entries are valid include them, oring them
-                        arxiv_class = '(' + ' OR '.join(['arxiv_class:' + c + '.*' for c in arxiv_sel.split(',')]) + ')'
+                    arxiv_class = self.arxiv_class_addition_myads_queries(args)
+                    if arxiv_class and date_start and date_end and start_year:
                         title = self.translate_title_for_myads(title_str)
                         # OR arxiv classes and title if db_key is DAILY_PRE,
                         # otherwise leave empty which is going to be AND
                         add_or = ' OR ' if args.get('db_key', None) == 'DAILY_PRE' else ' '
-                        daily_arxiv_query = 'bibstem:arxiv ({arxiv_class}{add_or}{title}) entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
+                        daily_arxiv_query = 'bibstem:arxiv (({arxiv_class}){add_or}{title}) entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
                         daily_arxiv_query = daily_arxiv_query.format(arxiv_class=arxiv_class, add_or=add_or,
                                                                      title=title,
                                                                      date_start=date_start, date_end=date_end,
@@ -419,9 +427,13 @@ class ClassicSearchRedirectView(Resource):
             authors_str = args.pop('author', None)
             if authors_str:
                 authors = self.classic_field_to_array(authors_str)
-                weekly_citation_query = 'citations(author:{authors})'.format(authors=' '.join(authors))
+                # trending((keyword1 OR keyword2) bibstem:arxiv arxiv_class:astro_ph.*)
+                arxiv_class = self.arxiv_class_addition_myads_queries(args)
+                arxiv_addition = 'bibstem:arxiv %s' % arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else None
+                weekly_citation_query = 'citations(author:{authors})'.format(authors=' '.join(authors)) if arxiv_addition is None else \
+                                        'citations((author:{authors}) {arxiv_addition})'.format(authors=' '.join(authors), arxiv_addition=arxiv_addition)
                 self.translation.search.append(urllib.quote(weekly_citation_query))
-                self.translation.sort = urllib.quote('score desc')
+                self.translation.sort = urllib.quote('entdate desc')
             else:
                 self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
 
@@ -430,7 +442,10 @@ class ClassicSearchRedirectView(Resource):
             title_str = args.pop('title', None)
             if title_str:
                 title = self.translate_title_for_myads(title_str)
-                weekly_keyword_query = 'trending({title})'.format(title=title)
+                arxiv_class = self.arxiv_class_addition_myads_queries(args)
+                arxiv_addition = 'bibstem:arxiv %s' % arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else None
+                weekly_keyword_query = 'trending({title})'.format(title=title) if arxiv_addition is None else \
+                                       'trending(({title}) {arxiv_addition})'.format(title=title, arxiv_addition=arxiv_addition)
                 self.translation.search.append(urllib.quote(weekly_keyword_query))
                 self.translation.sort = urllib.quote('score desc')
             else:
@@ -441,7 +456,10 @@ class ClassicSearchRedirectView(Resource):
             title_str = args.pop('title', None)
             if title_str:
                 title = self.translate_title_for_myads(title_str)
-                weekly_keyword_query = 'useful({title})'.format(title=title)
+                arxiv_class = self.arxiv_class_addition_myads_queries(args)
+                arxiv_addition = 'bibstem:arxiv %s' % arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else None
+                weekly_keyword_query = 'useful({title})'.format(title=title) if arxiv_addition is None else \
+                                       'useful(({title}) {arxiv_addition})'.format(title=title, arxiv_addition=arxiv_addition)
                 self.translation.search.append(urllib.quote(weekly_keyword_query))
                 self.translation.sort = urllib.quote('score desc')
             else:
