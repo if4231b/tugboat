@@ -362,26 +362,15 @@ class ClassicSearchRedirectView(Resource):
             authors_str = args.pop('author', None)
             title_str = args.pop('title', None)
 
-            date_start = self.translate_entry_date_start(args)
-            date_end = self.translate_entry_date_end(args)
-            start_year = args.pop('start_year', None)
+            arxiv_class = self.arxiv_class_addition_myads_queries(args)
 
+            query = None
             # if author is filled and title is empty then it is Weekly authors query (#3)
             if authors_str and not title_str:
-                if start_year and date_start and date_end:
-                    authors = self.classic_field_to_array(authors_str)
-                    author_query = ' OR '.join(['author:' + x for x in authors])
-                    arxiv_class = self.arxiv_class_addition_myads_queries(args)
-                    arxiv_addition = 'bibstem:arxiv %s '%arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else ''
-                    weekly_authors_query = '{arxiv_addition}{author_query} entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
-                    weekly_authors_query = weekly_authors_query.format(arxiv_addition=arxiv_addition,
-                                                                       author_query=author_query,
-                                                                       date_start=date_start, date_end=date_end,
-                                                                       start_year=start_year)
-                    self.translation.search.append(urllib.quote(weekly_authors_query))
-                    self.translation.sort = urllib.quote('score desc')
-                else:
-                    self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
+                author_query = ' OR '.join(['author:' + x for x in self.classic_field_to_array(authors_str)])
+                arxiv_addition = 'bibstem:arxiv %s '%arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else ''
+                query = '{arxiv_addition}{author_query}'.format(arxiv_addition=arxiv_addition, author_query=author_query)
+                self.translation.sort = urllib.quote('score desc')
 
             # if title is filled and author is empty then
             # it is either Daily arXiv query (#1) or Weekly keyword (recent papers) query (#4)
@@ -389,85 +378,73 @@ class ClassicSearchRedirectView(Resource):
             elif title_str and not authors_str:
                 db_key = args.get('db_key', None)
                 # if db_key is DAILY_PRE or PRE then it is Daily arXiv query (#1)
-                if db_key == 'DAILY_PRE' or db_key == 'PRE':
-                    arxiv_class = self.arxiv_class_addition_myads_queries(args)
-                    if arxiv_class and date_start and date_end and start_year:
-                        title = self.translate_title_for_myads(title_str)
-                        # OR arxiv classes and title if db_key is DAILY_PRE,
-                        # otherwise leave empty which is going to be AND
-                        add_or = ' OR ' if args.get('db_key', None) == 'DAILY_PRE' else ' '
-                        daily_arxiv_query = 'bibstem:arxiv (({arxiv_class}){add_or}{title}) entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
-                        daily_arxiv_query = daily_arxiv_query.format(arxiv_class=arxiv_class, add_or=add_or,
-                                                                     title=title,
-                                                                     date_start=date_start, date_end=date_end,
-                                                                     start_year=start_year)
-                        self.translation.search.append(urllib.quote(daily_arxiv_query))
-                        self.translation.sort = urllib.quote('score desc')
-                    else:
-                        self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
+                if (db_key == 'DAILY_PRE' or db_key == 'PRE') and arxiv_class:
+                    title = self.translate_title_for_myads(title_str)
+                    # OR arxiv classes and title if db_key is DAILY_PRE,
+                    # otherwise leave empty which is going to be AND
+                    add_or = ' OR ' if args.get('db_key', None) == 'DAILY_PRE' else ' '
+                    query = 'bibstem:arxiv (({arxiv_class}){add_or}{title})'.format(arxiv_class=arxiv_class, add_or=add_or, title=title)
+                    self.translation.sort = urllib.quote('score desc')
                 # if db_key is AST or PHY then it is Weekly keyword (recent papers) query (#4)
                 elif db_key == 'AST' or db_key == 'PHY':
-                    if start_year and date_start and date_end:
-                        title = self.translate_title_for_myads(title_str)
-                        weekly_keyword_query = '{title} entdate:["{date_start}:00:00" TO {date_end}] pubdate:[{start_year}-00 TO *]'
-                        weekly_keyword_query = weekly_keyword_query.format(title=title,
-                                                                           date_start=date_start, date_end=date_end,
-                                                                           start_year=start_year)
-                        self.translation.search.append(urllib.quote(weekly_keyword_query))
-                        self.translation.sort = urllib.quote('entry_date desc')
-                    else:
-                        self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
+                    title = self.translate_title_for_myads(title_str)
+                    query = '{title}'.format(title=title)
+                    self.translation.sort = urllib.quote('entry_date desc')
+                else:
+                    self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
 
             # if both title and author have values, cannot decide which query it is
             elif authors_str and title_str:
                 self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
-        # Weekly citations query (#2)
-        elif query_type == 'CITES':
-            authors_str = args.pop('author', None)
-            if authors_str:
-                authors = self.classic_field_to_array(authors_str)
-                # trending((keyword1 OR keyword2) bibstem:arxiv arxiv_class:astro_ph.*)
-                arxiv_class = self.arxiv_class_addition_myads_queries(args)
-                arxiv_addition = 'bibstem:arxiv %s' % arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else None
-                weekly_citation_query = 'citations(author:{authors})'.format(authors=' '.join(authors)) if arxiv_addition is None else \
-                                        'citations((author:{authors}) {arxiv_addition})'.format(authors=' '.join(authors), arxiv_addition=arxiv_addition)
-                self.translation.search.append(urllib.quote(weekly_citation_query))
-                self.translation.sort = urllib.quote('entdate desc')
-            else:
-                self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
-
-        # Weekly keyword (popular papers) query (#5)
-        elif query_type == 'ALSOREADS':
-            title_str = args.pop('title', None)
-            if title_str:
-                title = self.translate_title_for_myads(title_str)
-                arxiv_class = self.arxiv_class_addition_myads_queries(args)
-                arxiv_addition = 'bibstem:arxiv %s' % arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else None
-                weekly_keyword_query = 'trending({title})'.format(title=title) if arxiv_addition is None else \
-                                       'trending(({title}) {arxiv_addition})'.format(title=title, arxiv_addition=arxiv_addition)
-                self.translation.search.append(urllib.quote(weekly_keyword_query))
-                self.translation.sort = urllib.quote('score desc')
-            else:
-                self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
-
-        # Weekly keyword (most cited) query (#6)
-        elif query_type == 'REFS':
-            title_str = args.pop('title', None)
-            if title_str:
-                title = self.translate_title_for_myads(title_str)
-                arxiv_class = self.arxiv_class_addition_myads_queries(args)
-                arxiv_addition = 'bibstem:arxiv %s' % arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else None
-                weekly_keyword_query = 'useful({title})'.format(title=title) if arxiv_addition is None else \
-                                       'useful(({title}) {arxiv_addition})'.format(title=title, arxiv_addition=arxiv_addition)
-                self.translation.search.append(urllib.quote(weekly_keyword_query))
-                self.translation.sort = urllib.quote('score desc')
-            else:
-                self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
-
-        # none of the known queries
+            if query:
+                date_start = self.translate_entry_date_start(args, optional=False)
+                date_end = self.translate_entry_date_end(args)
+                start_year = args.pop('start_year', None)
+                # see if there is start date and end date, add them in
+                if date_start and date_end:
+                    query = query + ' entdate:["{date_start}:00:00" TO {date_end}]'.format(date_start=date_start, date_end=date_end)
+                if start_year:
+                    query = query + ' pubdate:[{start_year}-00 TO *]'.format(start_year=start_year)
+                self.translation.search.append(urllib.quote(query))
         else:
-            self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+            param = None
+            # Weekly citations query (#2)
+            if query_type == 'CITES':
+                func_type = 'citations'
+                authors_str = args.pop('author', None)
+                if authors_str:
+                    param = '(author:%s)'%' '.join(self.classic_field_to_array(authors_str))
+                sort_type = 'entdate desc'
+            # Weekly keyword (popular papers) query (#5)
+            elif query_type == 'ALSOREADS':
+                func_type = 'trending'
+                title_str = args.pop('title', None)
+                if title_str:
+                    param = '(%s)'%self.translate_title_for_myads(title_str)
+                sort_type = 'score desc'
+            # Weekly keyword (most cited) query (#6)
+            elif query_type == 'REFS':
+                func_type = 'useful'
+                title_str = args.pop('title', None)
+                if title_str:
+                    param = '(%s)'%self.translate_title_for_myads(title_str)
+                sort_type = 'score desc'
+            # none of the known queries
+            else:
+                func_type = None
+
+            if func_type and param:
+                arxiv_class = self.arxiv_class_addition_myads_queries(args)
+                arxiv_addition = 'bibstem:arxiv %s' % arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else None
+                query = '{func_type}{param}'.format(func_type=func_type, param=param) if arxiv_addition is None else \
+                        '{func_type}({param} {arxiv_addition})'.format(func_type=func_type, param=param, arxiv_addition=arxiv_addition)
+                self.translation.search.append(urllib.quote(query))
+                self.translation.sort = urllib.quote(sort_type)
+            elif not func_type:
+                self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+            elif not param:
+                self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
 
         self.translate_database(args)
 
@@ -626,7 +603,7 @@ class ClassicSearchRedirectView(Resource):
             self.translation.search.append('AND')
         self.translation.search.append(search)
 
-    def translate_entry_date_start(self, args):
+    def translate_entry_date_start(self, args, optional=True):
         """ return formatted start date for entry date"""
         try:
             # get the start dates, if specified turned to int,
@@ -646,6 +623,12 @@ class ClassicSearchRedirectView(Resource):
                 start_day = 0
             else:
                 start_day = int(start_day)
+
+            # if this param is necessary make sure it was supplied
+            if not optional:
+                if sum(d == 0 for d in [start_year,start_month,start_day]) == 3:
+                    return None
+
             # is it date or offset date
             date = sum(d > 0 for d in [start_year,start_month,start_day])
             offset = sum(d < 0 for d in [start_year,start_month,start_day])
