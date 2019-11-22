@@ -353,9 +353,9 @@ class ClassicSearchRedirectView(Resource):
         arxiv_sel = args.pop('arxiv_sel', None)
         if arxiv_sel and self.validate_arxiv_sel(arxiv_sel):
             # if all entries are valid include them, oring them
-            arxiv_class = ' OR '.join(['arxiv_class:' + c + '.*' for c in arxiv_sel.split(',')])
+            arxiv_class = '(' + ' OR '.join(['arxiv_class:' + c + '.*' for c in arxiv_sel.split(',')]) + ')'
             return arxiv_class
-        return None
+        return ''
 
     def translate_myads_queries(self, args):
         """return query string for the six different myads queries"""
@@ -373,7 +373,7 @@ class ClassicSearchRedirectView(Resource):
             # if author is filled and title is empty then it is Weekly authors query (#3)
             if authors_str and not title_str:
                 author_query = ' OR '.join(['author:' + x for x in self.classic_field_to_array(authors_str)])
-                arxiv_addition = 'bibstem:arxiv %s '%arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else ''
+                arxiv_addition = 'bibstem:arxiv %s '%arxiv_class if args.get('db_key', None) == 'PRE' else ''
                 query = '{arxiv_addition}{author_query}'.format(arxiv_addition=arxiv_addition, author_query=author_query)
                 self.translation.sort = urllib.quote('score desc')
 
@@ -388,7 +388,7 @@ class ClassicSearchRedirectView(Resource):
                     # OR arxiv classes and title if db_key is DAILY_PRE,
                     # otherwise leave empty which is going to be AND
                     add_or = ' OR ' if args.get('db_key', None) == 'DAILY_PRE' else ' '
-                    query = 'bibstem:arxiv (({arxiv_class}){add_or}{title})'.format(arxiv_class=arxiv_class, add_or=add_or, title=title)
+                    query = 'bibstem:arxiv ({arxiv_class}{add_or}{title})'.format(arxiv_class=arxiv_class, add_or=add_or, title=title)
                     self.translation.sort = urllib.quote('score desc')
                 # if db_key is AST or PHY then it is Weekly keyword (recent papers) query (#4)
                 elif db_key == 'AST' or db_key == 'PHY':
@@ -403,14 +403,13 @@ class ClassicSearchRedirectView(Resource):
                 self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
             if query:
-                date_start = self.translate_entry_date_start(args)
-                date_end = self.translate_entry_date_end(args)
+                entry_date = self.translate_entry_date(args, append=False)
                 start_year = args.pop('start_year', None)
                 # see if there is start date and end date, add them in
-                if date_start and date_end:
-                    query = query + ' entdate:["{date_start}:00:00" TO {date_end}]'.format(date_start=date_start, date_end=date_end)
+                if entry_date:
+                    query = '{query} {entry_date}'.format(query=query, entry_date=entry_date)
                 if start_year:
-                    query = query + ' pubdate:[{start_year}-00 TO *]'.format(start_year=start_year)
+                    query = '{query} pubdate:[{start_year}-00 TO *]'.format(query=query, start_year=start_year)
                 self.translation.search.append(urllib.quote(query))
         else:
             param = None
@@ -441,7 +440,7 @@ class ClassicSearchRedirectView(Resource):
 
             if func_type and param:
                 arxiv_class = self.arxiv_class_addition_myads_queries(args)
-                arxiv_addition = 'bibstem:arxiv %s' % arxiv_class if arxiv_class and args.get('db_key', None) == 'PRE' else None
+                arxiv_addition = 'bibstem:arxiv %s'%arxiv_class if args.get('db_key', None) == 'PRE' else None
                 query = '{func_type}{param}'.format(func_type=func_type, param=param) if arxiv_addition is None else \
                         '{func_type}({param} {arxiv_addition})'.format(func_type=func_type, param=param, arxiv_addition=arxiv_addition)
                 self.translation.search.append(urllib.quote(query))
@@ -698,7 +697,7 @@ class ClassicSearchRedirectView(Resource):
             self.translation.error_message.append('ENTRY_DATE_NON_NUMERIC_ERROR')
             return None
 
-    def translate_entry_date(self, args):
+    def translate_entry_date(self, args, append=True):
         """ return string for pubdate element
         entry date has a dual functionality, it can be used to enter the date,
         or offset and then the date is computed from it.
@@ -716,11 +715,14 @@ class ClassicSearchRedirectView(Resource):
         start_date = self.translate_entry_date_start(args)
         end_date = self.translate_entry_date_end(args)
         if start_date is not None and end_date is not None and add:
-            search = 'entdate' + urllib.quote(':["{}" TO "{}"]'.format(start_date, end_date))
-            # fields in search are ANDed as of 5/9
-            if len(self.translation.search) > 0:
-                self.translation.search.append('AND')
-            self.translation.search.append(search)
+            if append:
+                search = 'entdate' + urllib.quote(':["{}:00:00" TO "{}"]'.format(start_date, end_date))
+                # fields in search are ANDed as of 5/9
+                if len(self.translation.search) > 0:
+                    self.translation.search.append('AND')
+                self.translation.search.append(search)
+            else:
+                return 'entdate:["{}:00:00" TO "{}"]'.format(start_date, end_date)
 
     def validate_db_key(self, db_key):
         """Validate database selections"""
