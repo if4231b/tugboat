@@ -198,6 +198,9 @@ class ClassicSearchRedirectView(Resource):
             # these are added for myads queryies
             'query_type': fields.Str(required=False),
             'qform': fields.Str(required=False),
+
+            # 11/22 supporting bibcode
+            'bibcode': fields.Str(required=False)
         }
 
 
@@ -271,6 +274,7 @@ class ClassicSearchRedirectView(Resource):
         self.translate_simple(args, 'object', 'object')
         self.translate_simple(args, 'title', 'title')
         self.translate_simple(args, 'text', 'abs')
+        self.translate_simple(args, 'bibcode', 'bibcode')
 
         # this is a filter on the classic side but in solr search is not treated as such
         self.translate_data_entries(args)
@@ -318,7 +322,8 @@ class ClassicSearchRedirectView(Resource):
     def get_logic(classic_param, args):
         """given a logic parameter, return its value canonical form"""
         classic_param_to_logic = {'author': 'aut_logic', 'title': 'ttl_logic',
-                                  'text': 'txt_logic', 'object': 'obj_logic'}
+                                  'text': 'txt_logic', 'object': 'obj_logic',
+                                  'bibcode': ''}
         if classic_param in args:
             logic_param = classic_param_to_logic[classic_param]
             value = args.pop(logic_param, None)

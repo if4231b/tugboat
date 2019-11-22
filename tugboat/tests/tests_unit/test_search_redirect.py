@@ -1215,6 +1215,19 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +
                          '&unprocessed_parameter=Synonym%20Replacement/', search)
 
+    def test_translate_bibcode(self):
+        req = Request('get', 'http://test.test?')
+        req.prepare()
+        req.mimetype = None
+
+        req.args = MultiDict([('bibcode', '1977PhRvC..16..427G')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+
+
+        self.assertEqual('q=' +  urllib.quote('bibcode:') + '(' + urllib.quote('1977PhRvC..16..427G') + ')' +
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT/', search)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
