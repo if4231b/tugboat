@@ -1152,9 +1152,13 @@ class ClassicSearchRedirectView(Resource):
                                 'req' : 'Require Field for Selection',
 
         }
+        # some of the calls are coming from else where that have no weight specified
+        # if that is the case do not show any unprocessed message
+        one_weight_present = False
         not_default = []
         for key,value in dict_weights_default.iteritems():
             if key in args:
+                one_weight_present = True
                 set_key = args.pop(key, None)
                 # if differs from default added to the list
                 if set_key != value:
@@ -1168,7 +1172,7 @@ class ClassicSearchRedirectView(Resource):
                     type = key.split('_')[1]
                     if dict_weights_of_type[type] not in not_default:
                         not_default.append(dict_weights_of_type[type])
-        if len(not_default) > 0:
+        if len(not_default) > 0 and one_weight_present:
             if args.get('qsearch', None) is not None:
                 # if this was for an unfielded query just display one general message
                 self.translation.unprocessed_fields.append(urllib.quote('One or more weighted parameter(s)'))
