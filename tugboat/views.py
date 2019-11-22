@@ -398,7 +398,7 @@ class ClassicSearchRedirectView(Resource):
                 self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
 
             if query:
-                date_start = self.translate_entry_date_start(args, optional=False)
+                date_start = self.translate_entry_date_start(args)
                 date_end = self.translate_entry_date_end(args)
                 start_year = args.pop('start_year', None)
                 # see if there is start date and end date, add them in
@@ -603,7 +603,7 @@ class ClassicSearchRedirectView(Resource):
             self.translation.search.append('AND')
         self.translation.search.append(search)
 
-    def translate_entry_date_start(self, args, optional=True):
+    def translate_entry_date_start(self, args):
         """ return formatted start date for entry date"""
         try:
             # get the start dates, if specified turned to int,
@@ -623,12 +623,6 @@ class ClassicSearchRedirectView(Resource):
                 start_day = 0
             else:
                 start_day = int(start_day)
-
-            # if this param is necessary make sure it was supplied
-            if not optional:
-                if sum(d == 0 for d in [start_year,start_month,start_day]) == 3:
-                    return None
-
             # is it date or offset date
             date = sum(d > 0 for d in [start_year,start_month,start_day])
             offset = sum(d < 0 for d in [start_year,start_month,start_day])
