@@ -338,7 +338,7 @@ class ClassicSearchRedirectView(Resource):
     @staticmethod
     def supplied(value):
         """check html parameter to see if it is valid"""
-        if value is None or (isinstance(value, basestring) and len(value) == 0):
+        if value is None or (isinstance(value, basestring) and (len(value) == 0 or not value.isdigit())):
             return False
         return True
 
