@@ -1159,6 +1159,17 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('q=' + urllib.quote('useful(("nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU) bibstem:arxiv )') +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
+        # Weekly citations query with db_key2 AST
+        req.args = MultiDict([('query_type', 'CITES'), ('db_key', 'ALL'), ('db_key2', 'AST'),
+                              ('author', 'LOCKHART, KELLY')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&' +
+                         'q=' + urllib.quote('citations(author:"LOCKHART, KELLY")') +
+                         '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
+                         '&sort=' + urllib.quote('entdate desc') +  '/', search)
+
     def test_myads_query_error(self):
         """test query_type"""
         req = Request('get', 'http://test.test?')

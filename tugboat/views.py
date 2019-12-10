@@ -200,7 +200,10 @@ class ClassicSearchRedirectView(Resource):
             'qform': fields.Str(required=False),
 
             # 11/22 supporting bibcode
-            'bibcode': fields.Str(required=False)
+            'bibcode': fields.Str(required=False),
+
+            # 12/10 support secondary db
+            'db_key2': fields.Str(required=False)
         }
 
 
@@ -451,6 +454,7 @@ class ClassicSearchRedirectView(Resource):
                 self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
 
         self.translate_database(args)
+        self.translate_database_secondary(args)
 
         # combine translation fragments in self.translation to ads/bumblebee parameter string
         if len(self.translation.search) == 0:
@@ -735,8 +739,8 @@ class ClassicSearchRedirectView(Resource):
                 return False
         return True
 
-    def translate_database(self, args):
-        """translate which database to use
+    def translate_database_validate(self, value):
+        """validate and generate facet and filter queries
 
         only support for ast and phy, bbb does not support arxiv value, classic does not support general
         """
@@ -745,9 +749,7 @@ class ClassicSearchRedirectView(Resource):
                    'PRE':       'e-prints',
                    'DAILY_PRE': 'e-prints',
                    'ALL'      : ''}
-        value = args.pop('db_key', None)
-        if value is None:
-            return
+
         if self.validate_db_key(value):
             # if all entries are valid include them by oring them
             db_key = ''
@@ -775,6 +777,19 @@ class ClassicSearchRedirectView(Resource):
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
             self.translation.unprocessed_fields.append('db_key')
 
+    def translate_database(self, args):
+        """translate which database to use"""
+        value = args.pop('db_key', None)
+        if value is None:
+            return
+        self.translate_database_validate(value)
+
+    def translate_database_secondary(self, args):
+        """translate which database to use when there is a secondary database defined"""
+        value = args.pop('db_key2', None)
+        if value is None:
+            return
+        self.translate_database_validate(value)
 
     def translate_results_subset(self, args):
         """subset/pagination currently not supported by bumblebee
