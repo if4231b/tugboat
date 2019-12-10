@@ -710,7 +710,7 @@ class ClassicSearchRedirectView(Resource):
         if sum([1 for f in fields if f in args]) == 0:
             return
         # if user has set values for any of fields
-        add = sum([1 for f in fields if len(args[f]) > 0]) > 0
+        add = sum([1 for f in fields if len(args.get(f, '')) > 0]) > 0
 
         start_date = self.translate_entry_date_start(args)
         end_date = self.translate_entry_date_end(args)
