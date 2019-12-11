@@ -1041,7 +1041,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('citations(author:"LOCKHART, KELLY")') +
-                         '&sort=' + urllib.quote('entdate desc') +  '/', search)
+                         '&sort=' + urllib.quote('entry_date desc') +  '/', search)
 
         # Weekly authors query with db_key other than PRE => no prefix
         req.args = MultiDict([('query_type', 'PAPERS'), ('db_key', 'AST'),
@@ -1112,7 +1112,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=' + urllib.quote('citations((author:"LOCKHART, KELLY") bibstem:arxiv (arxiv_class:astro-ph.*))') +
-                         '&sort=' + urllib.quote('entdate desc') +  '/', search)
+                         '&sort=' + urllib.quote('entry_date desc') +  '/', search)
 
         # Weekly keyword (popular papers) query with db_key PRE => add arxiv
         req.args = MultiDict([('query_type', 'ALSOREADS'), ('db_key', 'PRE'), ('arxiv_sel', 'astro-ph'),
@@ -1168,7 +1168,16 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&' +
                          'q=' + urllib.quote('citations(author:"LOCKHART, KELLY")') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
-                         '&sort=' + urllib.quote('entdate desc') +  '/', search)
+                         '&sort=' + urllib.quote('entry_date desc') +  '/', search)
+
+        # Weekly citations query with db_key2 PRE
+        req.args = MultiDict([('query_type', 'CITES'), ('db_key', 'ALL'), ('db_key2', 'PRE'),
+                              ('author', 'LOCKHART, KELLY')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' + urllib.quote('citations((author:"LOCKHART, KELLY") bibstem:arxiv )') +
+                         '&sort=' + urllib.quote('entry_date desc') +  '/', search)
 
     def test_myads_query_error(self):
         """test query_type"""

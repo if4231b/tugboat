@@ -351,6 +351,15 @@ class ClassicSearchRedirectView(Resource):
             # go with regular tokenizer
             return self.classic_field_to_string(value)[0].lstrip('*')
 
+    def get_db_key_myads_queries(self, args):
+        """return db_key or db_key2 from args without removing it"""
+        db_key = args.get('db_key', None)
+        if db_key is None or db_key == 'ALL':
+            db_key2 = args.get('db_key2', None)
+            if db_key2:
+                return db_key2
+        return db_key
+
     def arxiv_class_addition_myads_queries(self, args):
         """return arxiv query string for myads queries"""
         arxiv_sel = args.pop('arxiv_sel', None)
@@ -370,13 +379,14 @@ class ClassicSearchRedirectView(Resource):
             authors_str = args.pop('author', None)
             title_str = args.pop('title', None)
 
+            db_key = self.get_db_key_myads_queries(args)
             arxiv_class = self.arxiv_class_addition_myads_queries(args)
 
             query = None
             # if author is filled and title is empty then it is Weekly authors query (#3)
             if authors_str and not title_str:
                 author_query = ' OR '.join(['author:' + x for x in self.classic_field_to_array(authors_str)])
-                arxiv_addition = 'bibstem:arxiv %s '%arxiv_class if args.get('db_key', None) == 'PRE' else ''
+                arxiv_addition = 'bibstem:arxiv %s '%arxiv_class if db_key == 'PRE' else ''
                 query = '{arxiv_addition}{author_query}'.format(arxiv_addition=arxiv_addition, author_query=author_query)
                 self.translation.sort = urllib.quote('score desc')
 
@@ -384,13 +394,12 @@ class ClassicSearchRedirectView(Resource):
             # it is either Daily arXiv query (#1) or Weekly keyword (recent papers) query (#4)
             # so then decide on the db_key
             elif title_str and not authors_str:
-                db_key = args.get('db_key', None)
                 # if db_key is DAILY_PRE or PRE then it is Daily arXiv query (#1)
                 if (db_key == 'DAILY_PRE' or db_key == 'PRE') and arxiv_class:
                     title = self.translate_title_for_myads(title_str)
                     # OR arxiv classes and title if db_key is DAILY_PRE,
                     # otherwise leave empty which is going to be AND
-                    add_or = ' OR ' if args.get('db_key', None) == 'DAILY_PRE' else ' '
+                    add_or = ' OR ' if db_key == 'DAILY_PRE' else ' '
                     query = 'bibstem:arxiv ({arxiv_class}{add_or}{title})'.format(arxiv_class=arxiv_class, add_or=add_or, title=title)
                     self.translation.sort = urllib.quote('score desc')
                 # if db_key is AST or PHY then it is Weekly keyword (recent papers) query (#4)
@@ -422,7 +431,7 @@ class ClassicSearchRedirectView(Resource):
                 authors_str = args.pop('author', None)
                 if authors_str:
                     param = '(author:%s)'%' '.join(self.classic_field_to_array(authors_str))
-                sort_type = 'entdate desc'
+                sort_type = 'entry_date desc'
             # Weekly keyword (popular papers) query (#5)
             elif query_type == 'ALSOREADS':
                 func_type = 'trending'
@@ -442,8 +451,9 @@ class ClassicSearchRedirectView(Resource):
                 func_type = None
 
             if func_type and param:
+                db_key = self.get_db_key_myads_queries(args)
                 arxiv_class = self.arxiv_class_addition_myads_queries(args)
-                arxiv_addition = 'bibstem:arxiv %s'%arxiv_class if args.get('db_key', None) == 'PRE' else None
+                arxiv_addition = 'bibstem:arxiv %s'%arxiv_class if db_key == 'PRE' else None
                 query = '{func_type}{param}'.format(func_type=func_type, param=param) if arxiv_addition is None else \
                         '{func_type}({param} {arxiv_addition})'.format(func_type=func_type, param=param, arxiv_addition=arxiv_addition)
                 self.translation.search.append(urllib.quote(query))
