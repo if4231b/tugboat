@@ -396,11 +396,11 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('q=' + urllib.quote('entdate:["1990-01-01:00:00" TO "2010-12-31"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)  # years, months, days
 
-        req.args = MultiDict([('start_entry_year', "25"), ('end_entry_year', "20")])
+        req.args = MultiDict([('start_entry_year', "25"), ('end_entry_year', "21")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["1925-01-01:00:00" TO "2020-12-31"]') +
+        self.assertEqual('q=' + urllib.quote('entdate:["1925-01-01:00:00" TO "2021-12-31"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)  # years, months, days
 
     def test_classic_results_subset(self):
@@ -451,6 +451,12 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)  # only valid value
+
+        req.args = MultiDict([('return_req', 'no_params')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=*:*' + '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)  # another valid value as of 1/13/2020
 
         req.args = MultiDict([('return_req', 'form')])
         req.args.update(self.append_defaults())

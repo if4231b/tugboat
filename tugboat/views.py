@@ -999,6 +999,8 @@ class ClassicSearchRedirectView(Resource):
             pass
         elif return_req == 'result':
             pass
+        elif return_req == 'no_params':
+            pass
         else:
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
             self.translation.unprocessed_fields.append('return_req')
