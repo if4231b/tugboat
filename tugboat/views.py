@@ -658,6 +658,10 @@ class ClassicSearchRedirectView(Resource):
                 start_year = start_year if start_year != 0 else 1
                 start_month = start_month if start_month != 0 else 1
                 start_day = start_day if start_day != 0 else 1
+                if start_year != 1:
+                    # 2/13 per Kelly `add one day to the translated entry_date`
+                    next_day = datetime(start_year, start_month, start_day)  + relativedelta(days=1)
+                    return next_day.strftime('%Y-%m-%d')
                 return '{:04d}-{:02d}-{:02d}'.format(start_year, start_month, start_day)
         except:
             self.translation.error_message.append('ENTRY_DATE_NON_NUMERIC_ERROR')
@@ -706,7 +710,9 @@ class ClassicSearchRedirectView(Resource):
                 end_month = end_month if end_month != 0 else (datetime.now().month if end_year == datetime.now().year else 12)
                 end_day = end_day if end_day != 0 else \
                     (datetime.now().day if end_year == datetime.now().year else calendar.monthrange(end_year, end_month)[1])
-                return '{:04d}-{:02d}-{:02d}'.format(end_year, end_month, end_day)
+                # 2/13 per Kelly `add one day to the translated entry_date`
+                next_day = datetime(end_year, end_month, end_day) + relativedelta(days=1)
+                return next_day.strftime('%Y-%m-%d')
         except:
             self.translation.error_message.append('ENTRY_DATE_NON_NUMERIC_ERROR')
             return None
