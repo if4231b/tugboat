@@ -343,7 +343,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["1990-01-01:00:00" TO "1991-12-31"]') +
+        self.assertEqual('q=' + urllib.quote('entdate:["1990-01-02:00:00" TO "1992-01-01"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)  # both years only
 
         req.args = MultiDict([('start_entry_year', "1990"), ('start_entry_mon', "5"),
@@ -351,34 +351,34 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["1990-05-01:00:00" TO "1991-09-30"]') +
+        self.assertEqual('q=' + urllib.quote('entdate:["1990-05-02:00:00" TO "1991-10-01"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search) # years and months
 
         req.args = MultiDict([('start_entry_year', "1990"), ('end_entry_year', "1991"), ('end_entry_mon', "10")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["1990-01-01:00:00" TO "1991-10-31"]') +
+        self.assertEqual('q=' + urllib.quote('entdate:["1990-01-02:00:00" TO "1991-11-01"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search) # no start mon
 
         req.args = MultiDict([('start_entry_year', "1990"), ('start_entry_mon', "5"), ('end_entry_year', "1991")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["1990-05-01:00:00" TO "1991-12-31"]') +
+        self.assertEqual('q=' + urllib.quote('entdate:["1990-05-02:00:00" TO "1992-01-01"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search) # no end mon
 
         req.args = MultiDict([('start_entry_year', "1990"), ('start_entry_mon', "5")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["1990-05-01:00:00" TO "{}"]'.format(datetime.now().strftime("%Y-%m-%d"))) +
+        self.assertEqual('q=' + urllib.quote('entdate:["1990-05-02:00:00" TO "{}"]'.format(datetime.now().strftime("%Y-%m-%d"))) +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search) # no end
         req.args = MultiDict([('end_entry_year', "1991"), ('end_entry_mon', "10")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["0001-01-01:00:00" TO "1991-10-31"]') +
+        self.assertEqual('q=' + urllib.quote('entdate:["0001-01-01:00:00" TO "1991-11-01"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search) # no start
 
         req.args = MultiDict([('start_entry_year', "1990"), ('start_entry_mon', "5"), ('start_entry_day', "6"),
@@ -386,21 +386,21 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["1990-05-06:00:00" TO "1991-09-10"]') +
+        self.assertEqual('q=' + urllib.quote('entdate:["1990-05-07:00:00" TO "1991-09-11"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search) # years, months, days
 
         req.args = MultiDict([('start_entry_year', "90"), ('end_entry_year', "10")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["1990-01-01:00:00" TO "2010-12-31"]') +
+        self.assertEqual('q=' + urllib.quote('entdate:["1990-01-02:00:00" TO "2011-01-01"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)  # years, months, days
 
         req.args = MultiDict([('start_entry_year', "25"), ('end_entry_year', "21")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('entdate:["1925-01-01:00:00" TO "2021-12-31"]') +
+        self.assertEqual('q=' + urllib.quote('entdate:["1925-01-02:00:00" TO "2022-01-01"]') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)  # years, months, days
 
     def test_classic_results_subset(self):
@@ -1025,7 +1025,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) OR +"nuclear star cluster") entdate:["2019-10-15:00:00" TO "2019-10-16"] pubdate:[2019-00 TO *]') +
+        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) OR +"nuclear star cluster") entdate:["2019-10-16:00:00" TO "2019-10-17"] pubdate:[2019-00 TO *]') +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Daily arXiv query with db_key other than DAILY_PRE => no OR
@@ -1037,7 +1037,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) +"nuclear star cluster") entdate:["2019-10-15:00:00" TO "2019-10-16"] pubdate:[2019-00 TO *]') +
+        self.assertEqual('q=' + urllib.quote('bibstem:arxiv ((arxiv_class:astro-ph.*) +"nuclear star cluster") entdate:["2019-10-16:00:00" TO "2019-10-17"] pubdate:[2019-00 TO *]') +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Weekly citations query
@@ -1059,7 +1059,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&'
-                         'q=' + urllib.quote('author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["2019-09-26:00:00" TO "2019-10-18"] pubdate:[2019-00 TO *]') +
+                         'q=' + urllib.quote('author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["2019-09-27:00:00" TO "2019-10-19"] pubdate:[2019-00 TO *]') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
@@ -1072,7 +1072,7 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q='  + urllib.quote('bibstem:arxiv (arxiv_class:astro-ph.*) author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["2019-09-26:00:00" TO "2019-10-18"] pubdate:[2019-00 TO *]') +
+        self.assertEqual('q='  + urllib.quote('bibstem:arxiv (arxiv_class:astro-ph.*) author:"LU, JESSICA" OR author:"HOSEK, MATTHEW" OR author:"KEWLEY, LISA" OR author:"ACCOMAZZI, ALBERTO" OR author:"KURTZ, MICHAEL" entdate:["2019-09-27:00:00" TO "2019-10-19"] pubdate:[2019-00 TO *]') +
                          '&sort=' + urllib.quote('score desc') + '/', search)
 
         # Weekly keyword (recent papers) query
@@ -1085,7 +1085,7 @@ class TestSearchParametersTranslation(TestCase):
         view = ClassicSearchRedirectView()
         search = view.translate(req)
         self.assertEqual('filter_database_fq_database=OR&filter_database_fq_database=database:"astronomy"&'
-                         'q=' + urllib.quote('"nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU entdate:["2019-09-26:00:00" TO "2019-10-18"] pubdate:[2019-00 TO *]') +
+                         'q=' + urllib.quote('"nuclear star cluster" OR ADS OR "supermassive black holes" OR M31 OR "Andromeda Galaxy" OR OSIRIS OR IFU entdate:["2019-09-27:00:00" TO "2019-10-19"] pubdate:[2019-00 TO *]') +
                          '&fq=%7B!type%3Daqp%20v%3D%24fq_database%7D&fq_database=(database%3A%22astronomy%22)' +
                          '&sort=' + urllib.quote('entry_date desc') +  '/', search)
 
