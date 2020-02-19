@@ -1040,7 +1040,8 @@ class ClassicSearchRedirectView(Resource):
         return nonfielded metadata search query
         """
         REGEX_UNFILDED_MATCH = OrderedDict([
-            (re.compile(r"^[bibcode]?.*([12][089]\d\d[A-Z\.0-9&]{15})$", re.IGNORECASE), r'bibcode:"%s"'),
+            (re.compile(r"^(bibcode)?.*([12][089]\d\d[A-Z\.0-9&]{15})$", re.IGNORECASE), r'bibcode:"%s"'),
+            (re.compile(r"^(:?bibcode=)(([12][089?][\d?][\d?][A-Z\.&*0-9\s]+[OoAa]?[RrNn]?[Dd]?)+)$", re.IGNORECASE), r'bibcode:"%s"'),
             (re.compile(r"^title[=\s:]+(.*)$", re.IGNORECASE), r'title:"%s"'),
             (re.compile(r"^author[s]*[=\s:]+(.*)$", re.IGNORECASE), r'author:"%s"'),
             (re.compile(r"^[doi]?.*(10\..*)$", re.IGNORECASE), r'doi:"%s"'),
@@ -1052,10 +1053,10 @@ class ClassicSearchRedirectView(Resource):
         value = args.pop('qsearch', None)
         if value:
             qsearch = ''
-            for key in REGEX_UNFILDED_MATCH:
+            for i, key in enumerate(REGEX_UNFILDED_MATCH):
                 match = key.search(value)
                 if match:
-                    qsearch = REGEX_UNFILDED_MATCH[key]%(match.group(1))
+                    qsearch = REGEX_UNFILDED_MATCH[key]%(match.group(1 if i > 1 else 2))
                     break
             if len(qsearch) > 0:
                 self.translation.search.append(urllib.quote_plus(qsearch))
