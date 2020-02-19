@@ -1250,9 +1250,14 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-
-
         self.assertEqual('q=' +  urllib.quote('bibcode:') + '(' + urllib.quote('1977PhRvC..16..427G') + ')' +
+                         '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT/', search)
+
+        req.args = MultiDict([('bibcode', '2???ivoa.spec* OR 2???ivoa.rept*')])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        search = view.translate(req)
+        self.assertEqual('q=' +  urllib.quote('bibcode:') + '(' + urllib.quote('2???ivoa.spec* OR 2???ivoa.rept*') + ')' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT/', search)
 
 if __name__ == '__main__':
