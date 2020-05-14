@@ -1425,7 +1425,7 @@ class BumblebeeView(Resource):
             'fq': ['{!bitset}']
         }
 
-        headers = {'Authorization': 'Bearer ' + current_app.config['API_DEV_KEY']}
+        headers={'Authorization': 'Bearer %s' % request.headers.get('X-Forwarded-Authorization', request.headers.get('Authorization', ''))}
 
         # POST the query
         # https://api.adsabs.harvard.edu/v1/vault/query
