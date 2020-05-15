@@ -1,7 +1,5 @@
-git+https://github.com/adsabs/ADSMicroserviceUtils.git@v1.0.10
+git+https://github.com/adsabs/ADSMicroserviceUtils.git@v1.1.5
 git+https://github.com/adsabs/ADSParser.git@v1.0.1
-flask-discoverer==0.0.5
 Flask-RESTful==0.3.6
-Flask-Testing==0.6.2
 webargs==1.8.1
 Werkzeug==0.11.15
