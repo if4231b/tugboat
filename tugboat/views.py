@@ -1425,13 +1425,15 @@ class BumblebeeView(Resource):
             'fq': ['{!bitset}']
         }
 
+        items = request.headers.items()
+        headers = {k: v for k, v in request.headers.items()}
 
         # POST the query
         # https://api.adsabs.harvard.edu/v1/vault/query
         current_app.logger.info('Contacting vault/query ' + str(current_app.config['TESTING']))
         r = client().post(
         current_app.config['VAULT_QUERY_URL'],
-        data=bigquery_data,
+        data = bigquery_data,
         headers = headers
         )
 
