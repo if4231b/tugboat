@@ -203,7 +203,14 @@ class ClassicSearchRedirectView(Resource):
             'bibcode': fields.Str(required=False),
 
             # 12/10 support secondary db
-            'db_key2': fields.Str(required=False)
+            'db_key2': fields.Str(required=False),
+
+            # 6/22/2020 support bibstem, volume and page
+            'bibstem': fields.Str(required=False),
+            'year': fields.Str(required=False),
+            'volume': fields.Str(required=False),
+            'page': fields.Str(required=False),
+
         }
 
 
@@ -269,7 +276,7 @@ class ClassicSearchRedirectView(Resource):
                  self.translate_jou_pick, self.translate_group_sel,
                  self.translate_sort, self.translate_to_ignore,
                  self.translate_weights, self.translate_arxiv_sel,
-                 self.translate_ref_stems]
+                 self.translate_ref_stems, self.translate_search_docs]
         for f in funcs:
             f(args)  # each may contribute to self.translation singleton
 
@@ -1290,7 +1297,8 @@ class ClassicSearchRedirectView(Resource):
         ref_stems = ''
         if len(value) > 0:
             # there is A&A, GCN1, CLic2, JPhy3, JPhy4
-            match = re.findall('([-+]*[A-Za-z&1-4]{2,5})', value)
+            # or it could be something like A&A....33
+            match = re.findall('([-+]*[A-Za-z&.1-4]{2,9})', value)
             # yes
             if match:
                 ref_stems_positive = ''
@@ -1313,6 +1321,61 @@ class ClassicSearchRedirectView(Resource):
                     self.translation.search.append('bibstem:(' + ref_stems_positive + ')')
                 elif len(ref_stems_negative) > 0:
                     self.translation.search.append('-bibstem:(' + ref_stems_negative + ')')
+
+    def translate_search_docs(self, args):
+        """
+        translate four params bibstem, year, volume, and page
+        BBB: bibstem:(ApJ.. OR AJ..); classic: bibstem="ApJ..,AJ..."
+        BBB: year:[2019 TO 2020]; classic: year="2019-2020" OR
+        BBB: year:2019; classic: year=2019
+        """
+        search = ''
+        value = args.pop('bibstem', None)
+        if value:
+            if len(value) > 0:
+                # there is A&A, GCN1, CLic2, JPhy3, JPhy4
+                # or it could be something like A&A....33
+                match = re.findall('([A-Za-z&.1-4]{2,9})', value)
+                # yes
+                if match:
+                    bibstem = ''
+                    for b in match:
+                        if len(bibstem) > 0:
+                            bibstem += ' OR '
+                        bibstem += '"' + b + '"'
+                    if len(bibstem) > 0:
+                        search += 'bibstem:(' + bibstem + ')'
+                else:
+                    self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+                    self.translation.unprocessed_fields.append(value)
+
+        value = args.pop('year', None)
+        if value:
+            if len(value) > 0:
+                match = re.search('^([12][089]\d\d-[12][089]\d\d|[12][089]\d\d)$', value)
+                if match:
+                    value = value.split('-')
+                    if len(value) == 2:
+                        year = '[' + value[0] + ' TO ' + value[1] + ']'
+                    else:
+                        year = value[0]
+                    search += (' AND ' if len(search)>0 else '') + 'year:' + year
+                else:
+                    self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+                    self.translation.unprocessed_fields.append(value)
+
+        value = args.pop('page', None)
+        if value:
+            if len(value) > 0:
+                search += (' AND ' if len(search)>0 else '') + 'page:"' + value + '"'
+
+        value = args.pop('volume', None)
+        if value:
+            if len(value) > 0:
+                search += (' AND ' if len(search)>0 else '') + 'volume:"' + value + '"'
+
+        if len(search) > 0:
+            self.translation.search.append(urllib.quote_plus(search))
 
     @staticmethod
     def classic_field_to_array(value):
