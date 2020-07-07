@@ -1284,49 +1284,49 @@ class TestSearchParametersTranslation(TestCase):
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('bibstem:("Ap&SS")') +
+        self.assertEqual('q=' + 'bibstem:(' + urllib.quote('"Ap&SS"') + ')'
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT/', search)
 
         req.args = MultiDict([('bibstem', 'ApJ,AJ')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote_plus('bibstem:("ApJ" OR "AJ")') +
+        self.assertEqual('q=' + 'bibstem:(' + urllib.quote('"ApJ"') + ' OR ' + urllib.quote('"AJ"')  + ')'
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT/', search)
 
         req.args = MultiDict([('year', '2019-2020')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote_plus('year:[2019 TO 2020]') +
+        self.assertEqual('q=' + 'year:[2019 TO 2020]' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT/', search)
 
         req.args = MultiDict([('year', '2020')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('year:2020') +
+        self.assertEqual('q=' + 'year:2020' +
                          '&sort=' + urllib.quote('date desc, bibcode desc') +  '&format=SHORT/', search)
 
         req.args = MultiDict([('volume', '12')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('volume:"12"') +
+        self.assertEqual('q=' + 'volume:' + urllib.quote('"12"') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT/', search)
 
         req.args = MultiDict([('page', '211')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote('page:"211"') +
+        self.assertEqual('q=' + 'page:' + urllib.quote('"211"') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT/', search)
 
         req.args = MultiDict([('bibstem', 'Ap&SS'), ('year', '1987'), ('page', '211')])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.quote_plus('bibstem:("Ap&SS") AND year:1987 AND page:"211"') +
+        self.assertEqual('q=' + 'bibstem:(' + urllib.quote('"Ap&SS"') + ')' + urllib.quote(' AND ') + 'year:1987' + urllib.quote(' AND ') + 'page:' + urllib.quote('"211"') +
                          '&sort=' + urllib.quote('date desc, bibcode desc') + '&format=SHORT/', search)
 
 if __name__ == '__main__':

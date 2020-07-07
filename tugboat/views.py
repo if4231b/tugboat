@@ -1285,6 +1285,43 @@ class ClassicSearchRedirectView(Resource):
             self.translation.unprocessed_fields.append('arxiv_sel')
 
 
+    def parse_bibstem(self, value):
+        """
+        parse bibstem, no need for validating, just pass it to BBB, if any bibstem has been specified
+        """
+        #
+        bibstem = ''
+        # there is A&A, GCN1, CLic2, JPhy3, JPhy4
+        # or it could be something like A&A....33
+        match = re.findall('([-+]*[A-Za-z&.1-4]{2,9})', value)
+        # yes
+        if match:
+            ref_stems_positive = ''
+            ref_stems_negative = ''
+            for e in match:
+                if e.startswith('-'):
+                    if len(ref_stems_negative) > 0:
+                        ref_stems_negative += ' OR '
+                    ref_stems_negative += urllib.quote('"' + e[1:] + '"')
+                else:
+                    if len(ref_stems_positive) > 0:
+                        ref_stems_positive += ' OR '
+                    if e.startswith('+'):
+                        ref_stems_positive += urllib.quote('"' + e[1:] + '"')
+                    else:
+                        ref_stems_positive += urllib.quote('"' + e + '"')
+            if len(ref_stems_positive) > 0 and len(ref_stems_negative) > 0:
+                bibstem = 'bibstem:(' + ref_stems_positive + ') AND ' + '-bibstem:(' + ref_stems_negative + ')'
+            elif len(ref_stems_positive) > 0:
+                bibstem = 'bibstem:(' + ref_stems_positive + ')'
+            elif len(ref_stems_negative) > 0:
+                bibstem = '-bibstem:(' + ref_stems_negative + ')'
+        else:
+            self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
+            self.translation.unprocessed_fields.append(value)
+
+        return bibstem
+
     def translate_ref_stems(self, args):
         """
         BBB: bibstem:(ApJ.. OR AJ..); classic: ref_stems="ApJ..,AJ..."
@@ -1296,31 +1333,7 @@ class ClassicSearchRedirectView(Resource):
         # not validating, just pass it to BBB, if any bibstem has been specified
         ref_stems = ''
         if len(value) > 0:
-            # there is A&A, GCN1, CLic2, JPhy3, JPhy4
-            # or it could be something like A&A....33
-            match = re.findall('([-+]*[A-Za-z&.1-4]{2,9})', value)
-            # yes
-            if match:
-                ref_stems_positive = ''
-                ref_stems_negative = ''
-                for e in match:
-                    if e.startswith('-'):
-                        if len(ref_stems_negative) > 0:
-                            ref_stems_negative += ' OR '
-                        ref_stems_negative += urllib.quote('"' + e[1:] + '"')
-                    else:
-                        if len(ref_stems_positive) > 0:
-                            ref_stems_positive += ' OR '
-                        if e.startswith('+'):
-                            ref_stems_positive += urllib.quote('"' + e[1:] + '"')
-                        else:
-                            ref_stems_positive += urllib.quote('"' + e + '"')
-                if len(ref_stems_positive) > 0 and len(ref_stems_negative) > 0:
-                    self.translation.search.append('bibstem:(' + ref_stems_positive + ') AND ' + '-bibstem:(' + ref_stems_negative + ')')
-                elif len(ref_stems_positive) > 0:
-                    self.translation.search.append('bibstem:(' + ref_stems_positive + ')')
-                elif len(ref_stems_negative) > 0:
-                    self.translation.search.append('-bibstem:(' + ref_stems_negative + ')')
+            self.translation.search.append(self.parse_bibstem(value))
 
     def translate_search_docs(self, args):
         """
@@ -1333,21 +1346,7 @@ class ClassicSearchRedirectView(Resource):
         value = args.pop('bibstem', None)
         if value:
             if len(value) > 0:
-                # there is A&A, GCN1, CLic2, JPhy3, JPhy4
-                # or it could be something like A&A....33
-                match = re.findall('([A-Za-z&.1-4]{2,9})', value)
-                # yes
-                if match:
-                    bibstem = ''
-                    for b in match:
-                        if len(bibstem) > 0:
-                            bibstem += ' OR '
-                        bibstem += '"' + b + '"'
-                    if len(bibstem) > 0:
-                        search += 'bibstem:(' + bibstem + ')'
-                else:
-                    self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
-                    self.translation.unprocessed_fields.append(value)
+                search = self.parse_bibstem(value)
 
         value = args.pop('year', None)
         if value:
@@ -1359,7 +1358,7 @@ class ClassicSearchRedirectView(Resource):
                         year = '[' + value[0] + ' TO ' + value[1] + ']'
                     else:
                         year = value[0]
-                    search += (' AND ' if len(search)>0 else '') + 'year:' + year
+                    search += urllib.quote(' AND ' if len(search)>0 else '') + 'year:' + year
                 else:
                     self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
                     self.translation.unprocessed_fields.append(value)
@@ -1367,15 +1366,15 @@ class ClassicSearchRedirectView(Resource):
         value = args.pop('page', None)
         if value:
             if len(value) > 0:
-                search += (' AND ' if len(search)>0 else '') + 'page:"' + value + '"'
+                search += urllib.quote(' AND ' if len(search)>0 else '') + 'page:' + urllib.quote('"' + value + '"')
 
         value = args.pop('volume', None)
         if value:
             if len(value) > 0:
-                search += (' AND ' if len(search)>0 else '') + 'volume:"' + value + '"'
+                search += urllib.quote(' AND ' if len(search)>0 else '') + 'volume:' + urllib.quote('"' + value + '"')
 
         if len(search) > 0:
-            self.translation.search.append(urllib.quote_plus(search))
+            self.translation.search.append(search)
 
     @staticmethod
     def classic_field_to_array(value):
