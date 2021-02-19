@@ -4,13 +4,19 @@
 Views
 """
 
-from client import client
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from past.builtins import basestring
+from builtins import object
+from tugboat.client import client
 import traceback
 from flask import redirect, current_app, request, abort, render_template
 from flask_restful import Resource
 from webargs import fields
 from webargs.flaskparser import parser
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import calendar
@@ -51,7 +57,7 @@ class ComplexClassicPhysicsView(Resource):
     def get(self):
         return current_app.send_static_file('physics_service_w_BBB_button.html')
 
-class TranslationValue():
+class TranslationValue(object):
     """simple singleton container class to hold translation components
 
     functions that translation specific parameters typically augment the TranslationValue
@@ -311,11 +317,11 @@ class ClassicSearchRedirectView(Resource):
             solr_query += '&warning_message=' + '&warning_message='.join(self.translation.warning_message)
         if len(self.translation.unprocessed_fields) :
             solr_query += '&unprocessed_parameter=' + '&unprocessed_parameter='.join(self.translation.unprocessed_fields)
-        if len(args.keys()):
+        if len(list(args.keys())):
             # the functions that translate individual parameters use pop to remove parameters from arg list
             # here if there are unprocessed parameters
             # pass their names out ads/bumblebee
-            solr_query += '&unprocessed_parameter=' + urllib.quote('Parameters not processed: ' + ' '.join(args.keys()))
+            solr_query += '&unprocessed_parameter=' + urllib.parse.quote('Parameters not processed: ' + ' '.join(list(args.keys())))
         # add an extra slash for safari browser
         return solr_query + '/'
 
@@ -353,7 +359,7 @@ class ClassicSearchRedirectView(Resource):
         """ return classic title in the form accept by BBB """
         try:
             # remove the star if there is one at the beginning and call the special parser
-            return adsparser.parse_classic_keywords(value.lstrip('*'))
+            return adsparser.parse_classic_keywords(value.lstrip('*')).decode('utf8')
         except:
             # go with regular tokenizer
             return self.classic_field_to_string(value)[0].lstrip('*')
@@ -395,7 +401,7 @@ class ClassicSearchRedirectView(Resource):
                 author_query = ' OR '.join(['author:' + x for x in self.classic_field_to_array(authors_str)])
                 arxiv_addition = 'bibstem:arxiv %s '%arxiv_class if db_key == 'PRE' else ''
                 query = '{arxiv_addition}{author_query}'.format(arxiv_addition=arxiv_addition, author_query=author_query)
-                self.translation.sort = urllib.quote('score desc')
+                self.translation.sort = urllib.parse.quote('score desc')
 
             # if title is filled and author is empty then
             # it is either Daily arXiv query (#1) or Weekly keyword (recent papers) query (#4)
@@ -408,12 +414,12 @@ class ClassicSearchRedirectView(Resource):
                     # otherwise leave empty which is going to be AND
                     add_or = ' OR ' if db_key == 'DAILY_PRE' else ' '
                     query = 'bibstem:arxiv ({arxiv_class}{add_or}{title})'.format(arxiv_class=arxiv_class, add_or=add_or, title=title)
-                    self.translation.sort = urllib.quote('score desc')
+                    self.translation.sort = urllib.parse.quote('score desc')
                 # if db_key is AST or PHY then it is Weekly keyword (recent papers) query (#4)
                 elif db_key == 'AST' or db_key == 'PHY':
                     title = self.translate_title_for_myads(title_str)
                     query = '{title}'.format(title=title)
-                    self.translation.sort = urllib.quote('entry_date desc')
+                    self.translation.sort = urllib.parse.quote('entry_date desc')
                 else:
                     self.translation.error_message.append('MISSING_REQUIRED_PARAMETER')
 
@@ -429,7 +435,7 @@ class ClassicSearchRedirectView(Resource):
                     query = '{query} {entry_date}'.format(query=query, entry_date=entry_date)
                 if start_year:
                     query = '{query} pubdate:[{start_year}-00 TO *]'.format(query=query, start_year=start_year)
-                self.translation.search.append(urllib.quote(query))
+                self.translation.search.append(urllib.parse.quote(query))
         else:
             param = None
             # Weekly citations query (#2)
@@ -444,14 +450,14 @@ class ClassicSearchRedirectView(Resource):
                 func_type = 'trending'
                 title_str = args.pop('title', None)
                 if title_str:
-                    param = '(%s)'%self.translate_title_for_myads(title_str)
+                    param = self.translate_title_for_myads(title_str)
                 sort_type = 'score desc'
             # Weekly keyword (most cited) query (#6)
             elif query_type == 'REFS':
                 func_type = 'useful'
                 title_str = args.pop('title', None)
                 if title_str:
-                    param = '(%s)'%self.translate_title_for_myads(title_str)
+                    param = self.translate_title_for_myads(title_str)
                 sort_type = 'score desc'
             # none of the known queries
             else:
@@ -463,8 +469,8 @@ class ClassicSearchRedirectView(Resource):
                 arxiv_addition = 'bibstem:arxiv %s'%arxiv_class if db_key == 'PRE' else None
                 query = '{func_type}{param}'.format(func_type=func_type, param=param) if arxiv_addition is None else \
                         '{func_type}({param} {arxiv_addition})'.format(func_type=func_type, param=param, arxiv_addition=arxiv_addition)
-                self.translation.search.append(urllib.quote(query))
-                self.translation.sort = urllib.quote(sort_type)
+                self.translation.search.append(urllib.parse.quote(query))
+                self.translation.sort = urllib.parse.quote(sort_type)
             elif not func_type:
                 self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
             elif not param:
@@ -509,16 +515,16 @@ class ClassicSearchRedirectView(Resource):
         if authors_str:
             authors = self.classic_field_to_array(authors_str)
             # is it a single author search: ^last, first$
-            match = re.findall('\^(.*)\$', ' '.join(authors))
+            match = re.findall(r'\^(.*)\$', ' '.join(authors))
             # yes
             if match:
                 search = '(author:"' + match[0] + '" and author_count:1)'
                 self.translation.search.append(search)
             else:
-                search += urllib.quote(author_field) + '('
+                search += urllib.parse.quote(author_field) + '('
                 for author in authors:
-                    search += urllib.quote(author + connector)
-                search = search[:-len(urllib.quote(connector))]  # remove final
+                    search += urllib.parse.quote(author + connector)
+                search = search[:-len(urllib.parse.quote(connector))]  # remove final
                 search += ')'
                 # fields in search are ANDed as of 5/9 and issue a warning
                 if len(self.translation.search) > 0:
@@ -554,10 +560,10 @@ class ClassicSearchRedirectView(Resource):
                 #         self.translation.warning_message.append(urllib.quote('TITLE_ANDED_WARNING'))
                 #     elif classic_param == 'text':
                 #         self.translation.warning_message.append(urllib.quote('ABSTRACT_ANDED_WARNING'))
-            search += urllib.quote(bbb_param + ':') + '('
+            search += urllib.parse.quote(bbb_param + ':') + '('
             for term in terms:
-                search += urllib.quote(term + connector)
-            search = search[:-len(urllib.quote(connector))]  # remove final connector
+                search += urllib.parse.quote(term + connector)
+            search = search[:-len(urllib.parse.quote(connector))]  # remove final connector
             search += ')'
             # multiple fields in search are ANDed as of 5/9/2018
             if len(self.translation.search) > 0:
@@ -617,11 +623,11 @@ class ClassicSearchRedirectView(Resource):
         # did not change the code above that actually set the values if either is missing
         # Y10k problem, but for 2 digit years we want to be clear what years we are searching
         if start_year == 0:
-            search = 'pubdate' + urllib.quote(':[* TO {:04d}-{:02}]'.format(end_year, end_month))
+            search = 'pubdate' + urllib.parse.quote(':[* TO {:04d}-{:02}]'.format(end_year, end_month))
         elif end_year == 2222:
-            search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO *]'.format(start_year, start_month))
+            search = 'pubdate' + urllib.parse.quote(':[{:04d}-{:02d} TO *]'.format(start_year, start_month))
         else:
-            search = 'pubdate' + urllib.quote(':[{:04d}-{:02d} TO {:04d}-{:02}]'.format(start_year, start_month,
+            search = 'pubdate' + urllib.parse.quote(':[{:04d}-{:02d} TO {:04d}-{:02}]'.format(start_year, start_month,
                                                                                         end_year, end_month))
         # fields in search are ANDed as of 5/9
         if len(self.translation.search) > 0:
@@ -743,7 +749,7 @@ class ClassicSearchRedirectView(Resource):
         end_date = self.translate_entry_date_end(args)
         if start_date is not None and end_date is not None and add:
             if append:
-                search = 'entdate' + urllib.quote(':["{}:00:00" TO "{}"]'.format(start_date, end_date))
+                search = 'entdate' + urllib.parse.quote(':["{}:00:00" TO "{}"]'.format(start_date, end_date))
                 # fields in search are ANDed as of 5/9
                 if len(self.translation.search) > 0:
                     self.translation.search.append('AND')
@@ -793,8 +799,8 @@ class ClassicSearchRedirectView(Resource):
                     db_key += 'database:"' + dict_db[e] + '"'
                     self.translation.facet.append('&filter_database_fq_database=' + 'database:"' + dict_db[e] + '"')
             if len(db_key) > 0:
-                self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_database}') + \
-                                               '&fq_database=(' + urllib.quote(db_key) + ')')
+                self.translation.filter.append(urllib.parse.quote('{') + '!' + urllib.parse.quote('type=aqp v=$fq_database}') + \
+                                               '&fq_database=(' + urllib.parse.quote(db_key) + ')')
         else:
             # unrecognizable value
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
@@ -851,16 +857,16 @@ class ClassicSearchRedirectView(Resource):
             self.translation.facet.append('filter_property_fq_property=AND')
             self.translation.facet.append('&filter_property_fq_property=property:"refereed"')
             # only include refereed journals
-            self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
-                                           '&fq_property=(' + urllib.quote('property:("refereed")') + ')')
+            self.translation.filter.append(urllib.parse.quote('{') + '!' + urllib.parse.quote('type=aqp v=$fq_property}') + \
+                                           '&fq_property=(' + urllib.parse.quote('property:("refereed")') + ')')
         elif jou_pick == 'EXCL':
             if len(self.translation.facet) > 0:
                 self.translation.facet.append('&')
             self.translation.facet.append('filter_property_fq_property=AND')
             self.translation.facet.append('&filter_property_fq_property=property:"not refereed"')
             # only include non-refereed
-            self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_property}') + \
-                                           '&fq_property=(' + urllib.quote('property:("not refereed")') + ')')
+            self.translation.filter.append(urllib.parse.quote('{') + '!' + urllib.parse.quote('type=aqp v=$fq_property}') + \
+                                           '&fq_property=(' + urllib.parse.quote('property:("not refereed")') + ')')
         else:
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
             self.translation.unprocessed_fields.append('jou_pick')
@@ -870,8 +876,8 @@ class ClassicSearchRedirectView(Resource):
         """ Convert all classic data entries search related parameters to ads/bumblebee """
         dict_entries = {'data_link'       : 'esources:*',
                         'article_link'    : 'esources:("PUB_PDF" OR "PUB_HTML" OR "AUTHOR_PDF" OR "AUTHOR_HTML" OR "ADS_PDF" OR "ADS_SCAN")',
-                        'gif_link'        : 'esources:("ADS_SCAN")',
                         'article'         : 'esources:("PUB_PDF" OR "PUB_HTML")',
+                        'gif_link'        : 'esources:("ADS_SCAN")',
                         'preprint_link'   : 'esources:("EPRINT_HTML")',
                         'toc_link'        : 'property:("TOC")',
                         'ref_link'        : 'reference:*',
@@ -893,7 +899,7 @@ class ClassicSearchRedirectView(Resource):
         operator = self.translate_data_and(args)
         if operator is not None:
             # each may contribute to self.translation singleton
-            for classic,BBB in dict_entries.iteritems():
+            for classic,BBB in dict_entries.items():
                 value = args.pop(classic, None)
                 if value is None:
                     # if not provided, we do not need to include it in the result
@@ -903,7 +909,7 @@ class ClassicSearchRedirectView(Resource):
                     # NOT comes first, also add operator if there are multiple selection
                     if (operator == 'NOT') or len(search) > 0:
                         search.append(operator)
-                    search.append(urllib.quote(BBB))
+                    search.append(urllib.parse.quote(BBB))
                 else:
                     # unrecognizable value
                     self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
@@ -973,8 +979,8 @@ class ClassicSearchRedirectView(Resource):
                     group_sel += '"' + e + '"'
                     self.translation.facet.append('&filter_bibgroup_facet_fq_bibgroup_facet=' + 'bibgroup_facet:"' + e + '"')
                 if len(group_sel) > 0:
-                    self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_bibgroup_facet}') + \
-                        '&fq_bibgroup_facet=(' + urllib.quote_plus('bibgroup_facet:({})'.format(group_sel)) + ')')
+                    self.translation.filter.append(urllib.parse.quote('{') + '!' + urllib.parse.quote('type=aqp v=$fq_bibgroup_facet}') + \
+                        '&fq_bibgroup_facet=(' + urllib.parse.quote_plus('bibgroup_facet:({})'.format(group_sel)) + ')')
             else:
                 # unrecognizable value
                 self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
@@ -1032,10 +1038,10 @@ class ClassicSearchRedirectView(Resource):
                 self.translation.facet.append('&')
             self.translation.facet.append('filter_doctype_facet_hier_fq_doctype=AND')
             self.translation.facet.append('&filter_doctype_facet_hier_fq_doctype=' +
-                                          urllib.quote_plus('doctype_facet_hier:"0/Article"'))
+                                          urllib.parse.quote_plus('doctype_facet_hier:"0/Article"'))
             # only include article journals
-            self.translation.filter.append(urllib.quote('{') + '!' + urllib.quote('type=aqp v=$fq_doctype}') + \
-                                           '&fq_doctype=(' + urllib.quote_plus('doctype_facet_hier:"0/Article"') + ')')
+            self.translation.filter.append(urllib.parse.quote('{') + '!' + urllib.parse.quote('type=aqp v=$fq_doctype}') + \
+                                           '&fq_doctype=(' + urllib.parse.quote_plus('doctype_facet_hier:"0/Article"') + ')')
         else:
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
             self.translation.unprocessed_fields.append('article_sel')
@@ -1066,7 +1072,7 @@ class ClassicSearchRedirectView(Resource):
                     qsearch = REGEX_UNFILDED_MATCH[key]%(match.group(1 if i > 1 else 2))
                     break
             if len(qsearch) > 0:
-                self.translation.search.append(urllib.quote_plus(qsearch))
+                self.translation.search.append(urllib.parse.quote_plus(qsearch))
 
 
     def translate_sort(self, args):
@@ -1092,12 +1098,12 @@ class ClassicSearchRedirectView(Resource):
 
         value = args.pop('sort', None)
         if value is None:
-            self.translation.sort = urllib.quote('date desc, bibcode desc')
+            self.translation.sort = urllib.parse.quote('date desc, bibcode desc')
             return
 
-        for classic,BBB in dict_sort.iteritems():
+        for classic,BBB in dict_sort.items():
             if value == classic:
-                self.translation.sort = urllib.quote(BBB)
+                self.translation.sort = urllib.parse.quote(BBB)
                 return
 
         # unrecognizable value
@@ -1136,7 +1142,7 @@ class ClassicSearchRedirectView(Resource):
                                   'qform'        : '',
 
         }
-        for key,value in classic_ignored_fields.iteritems():
+        for key,value in classic_ignored_fields.items():
             set_key = args.pop(key, None)
             if (key == 'sim_query' or key == 'ned_query'):
                 # if it is checked, do nothing
@@ -1145,7 +1151,7 @@ class ClassicSearchRedirectView(Resource):
                 # if no object search is entered, do nothing
                 # note that this function is called before function that analyzes object
                 # hence object should still be in args
-                if ('object' in args.keys() and len(args['object']) == 0):
+                if ('object' in list(args.keys()) and len(args['object']) == 0):
                     continue
                 # go down to display a message if either of queries is unchecked
                 # and an object search is defined
@@ -1199,7 +1205,7 @@ class ClassicSearchRedirectView(Resource):
         # if that is the case do not show any unprocessed message
         one_weight_present = False
         not_default = []
-        for key,value in dict_weights_default.iteritems():
+        for key,value in dict_weights_default.items():
             if key in args:
                 one_weight_present = True
                 set_key = args.pop(key, None)
@@ -1218,10 +1224,10 @@ class ClassicSearchRedirectView(Resource):
         if len(not_default) > 0 and one_weight_present:
             if args.get('qsearch', None) is not None:
                 # if this was for an unfielded query just display one general message
-                self.translation.unprocessed_fields.append(urllib.quote('One or more weighted parameter(s)'))
+                self.translation.unprocessed_fields.append(urllib.parse.quote('One or more weighted parameter(s)'))
             else:
                 for err in not_default:
-                    self.translation.unprocessed_fields.append(urllib.quote(err))
+                    self.translation.unprocessed_fields.append(urllib.parse.quote(err))
 
 
 
@@ -1260,7 +1266,7 @@ class ClassicSearchRedirectView(Resource):
         if value is None:
             return
         # consider arXiv only if other dbs are not selected
-        filter = urllib.unquote(''.join(self.translation.filter))
+        filter = urllib.parse.unquote(''.join(self.translation.filter))
         if 'database:"astronomy"' in filter or 'database:"physics"' in filter:
             # 3/19/2019 remove the warning, as per Alberto.
             # self.translation.warning_message.append(
@@ -1271,14 +1277,14 @@ class ClassicSearchRedirectView(Resource):
             entry = value.split(',')
             # if all the classes are selected apply arxiv:(*) query
             if len(entry) == len(dict_arxiv):
-                self.translation.search.append('property:(' + urllib.quote("EPRINT_OPENACCESS") + ')')
+                self.translation.search.append('property:(' + urllib.parse.quote("EPRINT_OPENACCESS") + ')')
             else:
                 arxiv_sel = ''
                 for e in entry:
                     if len(arxiv_sel) > 0:
                         arxiv_sel += ' OR '
                     arxiv_sel += '"' + dict_arxiv[e].lower() + '"'
-                self.translation.search.append('keyword:(' + urllib.quote(arxiv_sel) + ')')
+                self.translation.search.append('keyword:(' + urllib.parse.quote(arxiv_sel) + ')')
         else:
             # unrecognizable value
             self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
@@ -1302,14 +1308,14 @@ class ClassicSearchRedirectView(Resource):
                 if e.startswith('-'):
                     if len(ref_stems_negative) > 0:
                         ref_stems_negative += ' OR '
-                    ref_stems_negative += urllib.quote('"' + e[1:] + '"')
+                    ref_stems_negative += urllib.parse.quote('"' + e[1:] + '"')
                 else:
                     if len(ref_stems_positive) > 0:
                         ref_stems_positive += ' OR '
                     if e.startswith('+'):
-                        ref_stems_positive += urllib.quote('"' + e[1:] + '"')
+                        ref_stems_positive += urllib.parse.quote('"' + e[1:] + '"')
                     else:
-                        ref_stems_positive += urllib.quote('"' + e + '"')
+                        ref_stems_positive += urllib.parse.quote('"' + e + '"')
             if len(ref_stems_positive) > 0 and len(ref_stems_negative) > 0:
                 bibstem = 'bibstem:(' + ref_stems_positive + ') AND ' + '-bibstem:(' + ref_stems_negative + ')'
             elif len(ref_stems_positive) > 0:
@@ -1351,14 +1357,14 @@ class ClassicSearchRedirectView(Resource):
         value = args.pop('year', None)
         if value:
             if len(value) > 0:
-                match = re.search('^([12][089]\d\d-[12][089]\d\d|[12][089]\d\d)$', value)
+                match = re.search(r'^([12][089]\d\d-[12][089]\d\d|[12][089]\d\d)$', value)
                 if match:
                     value = value.split('-')
                     if len(value) == 2:
                         year = '[' + value[0] + ' TO ' + value[1] + ']'
                     else:
                         year = value[0]
-                    search += urllib.quote(' AND ' if len(search)>0 else '') + 'year:' + year
+                    search += urllib.parse.quote(' AND ' if len(search)>0 else '') + 'year:' + year
                 else:
                     self.translation.error_message.append('UNRECOGNIZABLE_VALUE')
                     self.translation.unprocessed_fields.append(value)
@@ -1366,12 +1372,12 @@ class ClassicSearchRedirectView(Resource):
         value = args.pop('page', None)
         if value:
             if len(value) > 0:
-                search += urllib.quote(' AND ' if len(search)>0 else '') + 'page:' + urllib.quote('"' + value + '"')
+                search += urllib.parse.quote(' AND ' if len(search)>0 else '') + 'page:' + urllib.parse.quote('"' + value + '"')
 
         value = args.pop('volume', None)
         if value:
             if len(value) > 0:
-                search += urllib.quote(' AND ' if len(search)>0 else '') + 'volume:' + urllib.quote('"' + value + '"')
+                search += urllib.parse.quote(' AND ' if len(search)>0 else '') + 'volume:' + urllib.parse.quote('"' + value + '"')
 
         if len(search) > 0:
             self.translation.search.append(search)
@@ -1379,7 +1385,7 @@ class ClassicSearchRedirectView(Resource):
     @staticmethod
     def classic_field_to_array(value):
         """ convert authors/objects/title/abstract search words from classic to list"""
-        value = urllib.unquote(value)
+        value = urllib.parse.unquote(value)
         value = value.replace('\r\n', ';')
         values = value.split(';')
         for i in range(0, len(values)):
@@ -1391,21 +1397,20 @@ class ClassicSearchRedirectView(Resource):
                 negate = values[i].startswith('-')
                 values[i] = values[i][1:]
             # remove any whitespace before/after the words
-            values[i] = re.sub("^\s+|\s+$", "", values[i], flags=re.UNICODE)
+            values[i] = re.sub(r"^\s+|\s+$", "", values[i], flags=re.UNICODE)
             # if not an empty string and if not quoted, then quoted
             if len(values[i]) > 0:
-                values[i] = values[i].encode('utf8')
                 if (values[i].startswith('"') and values[i].endswith('"')) is False:
                     # always surround by double quotes if not already
                     values[i] = ('-' if negate else '') + '"' + values[i] + '"'
         # remove any empty strings
-        values = filter(None, values)
+        values = [_f for _f in values if _f]
         return values
     
     @staticmethod
     def classic_field_to_string(value):
         """ convert authors/objects/title/abstract search words from classic to list"""
-        value = urllib.unquote(value)
+        value = urllib.parse.unquote(value)
         value = value.replace('\r\n', ';')
         values = value.split(';')
         for i in range(0, len(values)):
@@ -1417,12 +1422,12 @@ class ClassicSearchRedirectView(Resource):
                 negate = values[i].startswith('-')
                 values[i] = values[i][1:]
             # remove any whitespace before/after the words
-            values[i] = re.sub("^\s+|\s+$", "", values[i], flags=re.UNICODE)
+            values[i] = re.sub(r"^\s+|\s+$", "", values[i], flags=re.UNICODE)
             # if not an empty string
             if len(values[i]) > 0:
-                values[i] = ('-' if negate else '') + values[i].encode('utf8')
+                values[i] = ('-' if negate else '') + values[i]
         # remove any empty strings
-        values = filter(None, values)
+        values = [_f for _f in values if _f]
         # concatenate and return in a list with one element
         return [' '.join(values)]
 
@@ -1475,7 +1480,7 @@ class BumblebeeView(Resource):
                 'User passed incorrect format: {}, {}'.format(type(data), data)
             )
             abort(400)
-        elif not all([isinstance(i, unicode) for i in data]):
+        elif not all([isinstance(i, str) for i in data]):
             current_app.logger.error(
                 'List contains non-unicode characters: {}'.format(data)
             )
@@ -1487,8 +1492,8 @@ class BumblebeeView(Resource):
             'fq': ['{!bitset}']
         }
 
-        items = request.headers.items()
-        headers = {k: v for k, v in request.headers.items()}
+        items = list(request.headers.items())
+        headers = {k: v for k, v in list(request.headers.items())}
 
         # POST the query
         # https://api.adsabs.harvard.edu/v1/vault/query
@@ -1503,7 +1508,7 @@ class BumblebeeView(Resource):
             current_app.logger.warning(
                 'vault/query returned non-200 exit status: {}'.format(r.text)
             )
-            return r.text, r.status_code, r.headers.items()
+            return r.text, r.status_code, list(r.headers.items())
 
         # Get back a query id
         current_app.logger.info('vault/query returned: {}'.format(r.json()))

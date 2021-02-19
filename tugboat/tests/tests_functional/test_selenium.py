@@ -11,7 +11,7 @@ sys.path.append(PROJECT_HOME)
 
 import unittest
 
-from flask.ext.testing import LiveServerTestCase
+from flask_testing import LiveServerTestCase
 from tugboat.app import create_app
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
