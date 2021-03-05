@@ -1300,7 +1300,6 @@ class ClassicSearchRedirectView(Resource):
         # there is A&A, GCN1, CLic2, JPhy3, JPhy4
         # or it could be something like A&A....33
         match = re.findall('([-+]*[A-Za-z&.0-9]{2,9})', value)
-        print('........match',match)
         # yes
         if match:
             ref_stems_positive = ''
