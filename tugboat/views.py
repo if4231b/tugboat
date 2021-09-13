@@ -514,12 +514,29 @@ class ClassicSearchRedirectView(Resource):
         authors_str = args.pop('author', None)
         if authors_str:
             authors = self.classic_field_to_array(authors_str)
-            # is it a single author search: ^last, first$
-            match = re.findall(r'\^(.*)\$', ' '.join(authors))
-            # yes
-            if match:
-                search = '(author:"' + match[0] + '" and author_count:1)'
-                self.translation.search.append(search)
+            single_author = ' '.join(authors).replace('"', '')
+            if re.match(r'\^', single_author):
+                # is it a single author search: ^last, first$
+                match = re.findall(r'\^([^$]*)\$', ' '.join(authors).replace('"', ''))
+                # yes
+                if match:
+                    search = '(author:"' + match[0] + '" and author_count:1)'
+                    self.translation.search.append(search)
+                else:
+                    # is it first author search: ^last, first
+                    match = re.findall(r'\^([A-Za-z]+,\s+[A-Za-z]+)', ' '.join(authors).replace('"', ''))
+                    # yes
+                    if match:
+                        search = 'author:"' + match[0] + '"'
+                        self.translation.search.append(search)
+                    else:
+                        # is it first author search, but with no first initials
+                        match = re.findall(r'\^([A-Za-z\s]+)', ' '.join(authors).replace('"', ''))
+                        # yes
+                        if match:
+                            search = 'author:"' + match[0] + ',"'
+                            self.translation.search.append(search)
+            # multiple authors
             else:
                 search += urllib.parse.quote(author_field) + '('
                 for author in authors:
