@@ -102,6 +102,46 @@ class TestSearchParametersTranslation(TestCase):
                          '&format=SHORT' + '/',
                          author_search) # authors with or
 
+        # first author
+        req.args = MultiDict([('author', urllib.parse.quote('^Huchra, John'))])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        author_search = view.translate(req)
+        self.assertEqual('q=' + 'author:' + '"Huchra, John"' +
+                         '&sort=' + urllib.parse.quote('date desc, bibcode desc') +
+                         '&format=SHORT' + '/',
+                         author_search) # first author no quotes
+
+        # single author
+        req.args = MultiDict([('author', urllib.parse.quote('^Huchra, John$'))])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        author_search = view.translate(req)
+        self.assertEqual('q=' + '(author:"Huchra, John" and author_count:1)' +
+                         '&sort=' + urllib.parse.quote('date desc, bibcode desc') +
+                         '&format=SHORT' + '/',
+                         author_search) # single author no quotes
+
+        # multi word last name author, no initials
+        req.args = MultiDict([('author', urllib.parse.quote('^Dorigo Jones'))])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        author_search = view.translate(req)
+        self.assertEqual('q=' + 'author:"Dorigo Jones,"' +
+                         '&sort=' + urllib.parse.quote('date desc, bibcode desc') +
+                         '&format=SHORT' + '/',
+                         author_search) # single author, no initials, no quotes
+
+        # multi word last name author, no initials, quoted
+        req.args = MultiDict([('author', urllib.parse.quote('"^Dorigo Jones"'))])
+        req.args.update(self.append_defaults())
+        view = ClassicSearchRedirectView()
+        author_search = view.translate(req)
+        self.assertEqual('q=' + 'author:"Dorigo Jones,"' +
+                         '&sort=' + urllib.parse.quote('date desc, bibcode desc') +
+                         '&format=SHORT' + '/',
+                         author_search) # single author, no initials, with quotes
+
     def test_object(self):
         """object: single, multple, etc"""
         req = Request('get', 'http://test.test?')
