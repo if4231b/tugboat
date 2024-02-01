@@ -444,11 +444,11 @@ class TestSearchParametersTranslation(TestCase):
         self.assertEqual('q=' + urllib.parse.quote('entdate:["1990-01-02:00:00" TO "2011-01-01"]') +
                          '&sort=' + urllib.parse.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)  # years, months, days
 
-        req.args = MultiDict([('start_entry_year', "25"), ('end_entry_year', "22")])
+        req.args = MultiDict([('start_entry_year', "26"), ('end_entry_year', "22")])
         req.args.update(self.append_defaults())
         view = ClassicSearchRedirectView()
         search = view.translate(req)
-        self.assertEqual('q=' + urllib.parse.quote('entdate:["1925-01-02:00:00" TO "2023-01-01"]') +
+        self.assertEqual('q=' + urllib.parse.quote('entdate:["1926-01-02:00:00" TO "2023-01-01"]') +
                          '&sort=' + urllib.parse.quote('date desc, bibcode desc') + '&format=SHORT' +  '/', search)  # years, months, days
 
     def test_classic_results_subset(self):

@@ -3,3 +3,5 @@ local*
 include/
 lib/
 .coverage
+.venv
+logs/
